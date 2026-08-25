@@ -1,0 +1,5 @@
+name,restriction_type,latitude,longitude,radius_km,source_url,valid_from,notes
+Tarapur Atomic Power Station,restricted,19.8292,72.6572,,PASTE_OFFICIAL_SOURCE_URL,,Need official radius or polygon
+Colaba Naval Area,restricted,18.8945,72.8125,,PASTE_OFFICIAL_SOURCE_URL,,Need official radius or polygon
+Karanja Naval Base,restricted,18.855,72.925,,PASTE_OFFICIAL_SOURCE_URL,,Need official radius or polygon
+Malvan Marine Sanctuary,protected_area,16.058,73.468,,,,PDF unavailable on WII portal

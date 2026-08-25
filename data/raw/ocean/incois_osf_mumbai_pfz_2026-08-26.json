@@ -1,0 +1,24 @@
+{
+  "source_name": "INCOIS Ocean State Forecast public WMS",
+  "source_mode": "LIVE",
+  "retrieved_at": "2026-08-25T00:00:00+05:30",
+  "issued_date_displayed_by_source": "2026-08-25",
+  "location": {
+    "latitude": 18.87639,
+    "longitude": 72.35056,
+    "description": "Offshore PFZ coordinate near Colaba/Mumbai; not Mumbai Harbour land point"
+  },
+  "observations": [
+    {"parameter": "wind_speed", "value": 8.02291231920904, "unit": "m/s", "valid_time": "2026-08-26T03:00:00Z", "source_dataset": "rsmc_combined_ww3_20260824.nc", "wms_layer": "UWND:VWND-mag"},
+    {"parameter": "significant_wave_height", "value": 2.1862635612487793, "unit": "m", "valid_time": "2026-08-26T03:00:00Z", "source_dataset": "rsmc_combined_ww3_20260824.nc", "wms_layer": "HS"},
+    {"parameter": "wave_period", "value": 5.649555206298828, "unit": "s", "valid_time": "2026-08-26T03:00:00Z", "source_dataset": "rsmc_combined_ww3_20260824.nc", "wms_layer": "T02"},
+    {"parameter": "swell_height", "value": 1.035964846611023, "unit": "m", "valid_time": "2026-08-26T03:00:00Z", "source_dataset": "rsmc_combined_ww3_20260824.nc", "wms_layer": "PHS01"},
+    {"parameter": "swell_period", "value": 10.178632736206055, "unit": "s", "valid_time": "2026-08-26T03:00:00Z", "source_dataset": "rsmc_combined_ww3_20260824.nc", "wms_layer": "PTP01"},
+    {"parameter": "surface_current_speed", "value": 0.09923590838859189, "unit": "m/s", "valid_time": "2026-08-26T01:30:00Z", "source_dataset": "CURRENTS_NIO_20260823.nc", "wms_layer": "CURRENT"}
+  ],
+  "limitations": [
+    "This is one point forecast at an offshore PFZ coordinate, not a coast/harbour measurement.",
+    "It is a decision-support input and not a guarantee of safety.",
+    "A production run must re-fetch and validate timestamps immediately before making a recommendation."
+  ]
+}

@@ -1,0 +1,16 @@
+{
+  "scope": "Mumbai-Konan coast, Maharashtra, India",
+  "status": "reference_maps_imported; no route-blocking polygons available",
+  "sources": [
+    {"file": "data/raw/boundaries/czmp_mumbai.pdf", "coverage": "Mumbai City and Suburban", "use": "coastal-zone context only"},
+    {"file": "data/raw/boundaries/czmp_palghar.pdf", "coverage": "Palghar", "use": "coastal-zone context only"},
+    {"file": "data/raw/boundaries/czmp_raigad.pdf", "coverage": "Raigad", "use": "coastal-zone context only"},
+    {"file": "data/raw/boundaries/czmp_ratnagiri.pdf", "coverage": "Ratnagiri", "use": "coastal-zone context only"},
+    {"file": "data/raw/boundaries/czmp_thane.pdf", "coverage": "Thane", "use": "coastal-zone context only"},
+    {"file": "data/raw/boundaries/restricted_zones.csv", "coverage": "point references", "use": "context only until official source URL and polygon/radius are supplied"}
+  ],
+  "excluded_duplicate": {
+    "file": "C:/Users/hrush/Downloads/czmp_sindhudurg.pdf",
+    "reason": "Byte-for-byte duplicate of czmp_ratnagiri.pdf; correct Sindhudurg source still required."
+  }
+}
