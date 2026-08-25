@@ -1,7 +1,5 @@
 // ORCA 2.0 - Autonomous Marine Intelligence Platform
-const API_BASE = window.location.protocol === "file:"
-  ? "http://127.0.0.1:8000"
-  : window.location.origin;
+const API_BASE = ["8000", "8001"].includes(window.location.port) ? window.location.origin : "http://127.0.0.1:8000";
 let selectedLocation = { lat: 18.95, lon: 72.85 };
 const sessionId = (typeof crypto !== "undefined" && crypto.randomUUID) ? crypto.randomUUID() : String(Date.now());
 let latestResult = null;
