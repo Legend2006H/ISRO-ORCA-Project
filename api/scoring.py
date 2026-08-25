@@ -21,14 +21,14 @@ def rank_zones(candidates: list[ZoneCandidate]) -> list[RankedZone]:
         safety = (.40 * candidate.wave_safety + .25 * candidate.wind_safety
                   + .15 * candidate.swell_safety + .10 * candidate.current_safety
                   + .10 * candidate.hazard_clearance)
-        overall = 0 if blocked else (.45 * fishing + .40 * safety
-                                     + .10 * candidate.accessibility_score
-                                     + .05 * candidate.data_quality_score)
+        overall = (.45 * fishing + .40 * safety
+                   + .10 * candidate.accessibility_score
+                   + .05 * candidate.data_quality_score)
         ranked.append(RankedZone(**candidate.model_dump(), fishing_score=round(fishing, 1),
                                  safety_score=round(safety, 1), overall_score=round(overall, 1),
                                  rank=0, decision_status="BLOCKED" if blocked else "SECONDARY",
                                  rejected_reason=reasons))
-    ranked.sort(key=lambda zone: zone.overall_score, reverse=True)
+    ranked.sort(key=lambda zone: (0 if zone.decision_status == "BLOCKED" else 1, zone.overall_score), reverse=True)
     for rank, zone in enumerate(ranked, start=1):
         zone.rank = rank
         if zone.decision_status != "BLOCKED" and rank == 1:

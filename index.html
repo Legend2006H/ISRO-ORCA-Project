@@ -8,6 +8,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&family=Noto+Sans+Devanagari:wght@400;500;600;700&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="./styles.css" />
+    <link rel="stylesheet" href="./runtime.css" />
   </head>
   <body>
     <main class="app-shell">
@@ -41,8 +42,9 @@
             <h2>What do you need to know before you sail?</h2>
             <div class="prompt-box">
               <textarea id="query" aria-label="Ask ORCA" rows="3">Which fishing zone near Mumbai is best tomorrow morning, considering fishing potential and safety?</textarea>
-              <button id="askBtn" class="ask-button">Analyze <span>→</span></button>
+              <button id="askBtn" class="ask-button" type="button" onclick="window.orcaAnalyse && window.orcaAnalyse()">Analyze <span>→</span></button>
             </div>
+            <p id="analysisStatus" class="analysis-status" role="status">Ready to analyse cached PFZ and ocean data.</p>
             <div class="quick-prompts">
               <button data-query="Where is the nearest Potential Fishing Zone to me today?">Nearest PFZ</button>
               <button data-query="Is it safe to venture into the sea tomorrow morning?">Safety check</button>
@@ -100,6 +102,6 @@
         </section>
       </section>
     </main>
-    <script src="./app.js"></script>
+    <script src="./app.js?v=20260825-3"></script>
   </body>
 </html>

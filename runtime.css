@@ -1,0 +1,9 @@
+.analysis-status {
+  min-height: 16px;
+  margin: 9px 0 0;
+  color: var(--muted);
+  font: 10px DM Mono, monospace;
+}
+
+.analysis-status.success { color: var(--lime); }
+.analysis-status.error { color: var(--red); }

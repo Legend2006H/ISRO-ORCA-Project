@@ -6,7 +6,13 @@ from .models import ChatRequest
 from .offline_service import DEFAULT_LOCATION, ROOT, analyse, detect_language
 
 app = FastAPI(title="ORCA API", version="0.2.0", description="Evidence-first cached marine decision support")
-app.add_middleware(CORSMiddleware, allow_origins=["http://localhost:5173", "http://localhost:8000", "http://127.0.0.1:8000", "null"], allow_methods=["*"], allow_headers=["*"])
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 sessions: dict[str, list[dict[str, str]]] = {}
 
 
@@ -24,6 +30,11 @@ def styles() -> FileResponse:
 @app.get("/app.js", include_in_schema=False)
 def script() -> FileResponse:
     return FileResponse(ROOT / "app.js", media_type="text/javascript")
+
+
+@app.get("/runtime.css", include_in_schema=False)
+def runtime_styles() -> FileResponse:
+    return FileResponse(ROOT / "runtime.css", media_type="text/css")
 
 
 @app.get("/health")
