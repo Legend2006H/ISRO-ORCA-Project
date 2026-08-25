@@ -60,3 +60,47 @@ def test_api_health_and_evidence_endpoints() -> None:
     ev_res = client.get(f"/api/v1/evidence/{first_ev_id}")
     assert ev_res.status_code == 200
     assert ev_res.json()["id"] == first_ev_id    
+
+
+def test_routing_api() -> None:
+    res = client.post("/api/v1/route", json={
+        "origin": {"lat": 18.95, "lon": 72.85},
+        "destination": {"lat": 18.74, "lon": 72.48},
+        "vessel_speed_kmh": 18.0,
+    }).json()
+    assert "distance_km" in res
+    assert res["distance_km"] > 0
+    assert res["waypoints_count"] >= 2
+    assert res["geojson"]["geometry"]["type"] == "LineString"
+
+
+def test_pfz_and_boundaries_geojson() -> None:
+    pfz_res = client.get("/api/v1/pfz/all").json()
+    assert pfz_res["type"] == "FeatureCollection"
+    assert pfz_res["total_candidates"] == 89
+    assert len(pfz_res["features"]) == 89
+
+    bound_res = client.get("/api/v1/boundaries/all").json()
+    assert bound_res["type"] == "FeatureCollection"
+    assert len(bound_res["features"]) >= 1
+
+
+def test_vessel_profile_simulation() -> None:
+    # Small boat (1.5m max wave) should be BLOCKED in 2.2m wave
+    res_small = client.post("/api/v1/chat", json={
+        "message": "Is it safe to depart?",
+        "location": {"lat": 18.95, "lon": 72.85},
+        "vessel_type": "small_boat",
+        "language": "en",
+    }).json()
+    assert res_small["safety"]["departure_allowed"] is False
+
+    # Deep-sea vessel (4.0m max wave) should be SAFE in 2.2m wave
+    res_deep = client.post("/api/v1/chat", json={
+        "message": "Is it safe to depart?",
+        "location": {"lat": 18.95, "lon": 72.85},
+        "vessel_type": "deep_sea",
+        "language": "en",
+    }).json()
+    assert res_deep["safety"]["departure_allowed"] is True
+    assert "SAFE" in res_deep["answer"]    

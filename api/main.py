@@ -2,10 +2,19 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 
-from .models import ChatRequest
-from .offline_service import DEFAULT_LOCATION, ROOT, analyse, detect_language
+from .live_marine import fetch_live_marine_conditions
+from .models import ChatRequest, Location, RouteRequest, VESSEL_PROFILES
+from .offline_service import (
+    DEFAULT_LOCATION,
+    ROOT,
+    analyse,
+    detect_language,
+    get_all_boundaries_geojson,
+    get_all_pfz_geojson,
+)
+from .routing import plan_safe_route
 
-app = FastAPI(title="ORCA API", version="0.2.0", description="Evidence-first cached marine decision support")
+app = FastAPI(title="ORCA API", version="2.0.0", description="Production-grade AI Marine Intelligence Platform")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -39,7 +48,41 @@ def runtime_styles() -> FileResponse:
 
 @app.get("/health")
 def health() -> dict:
-    return {"status": "ok", "source_mode": "CACHED", "default_location": DEFAULT_LOCATION.model_dump(), "warning": "Cached data only; verify official advisories before departure."}
+    return {
+        "status": "ok",
+        "system": "ORCA Marine Intelligence Platform",
+        "version": "2.0.0",
+        "source_mode": "CACHED",
+        "default_location": DEFAULT_LOCATION.model_dump(),
+        "available_vessels": list(VESSEL_PROFILES.keys()),
+        "warning": "Cached data only; verify official advisories before departure.",
+    }
+
+
+@app.get("/api/v1/vessels")
+def get_vessels() -> dict:
+    return {k: v.model_dump() for k, v in VESSEL_PROFILES.items()}
+
+
+@app.get("/api/v1/pfz/all")
+def get_all_pfz() -> dict:
+    return get_all_pfz_geojson()
+
+
+@app.get("/api/v1/boundaries/all")
+def get_all_boundaries() -> dict:
+    return get_all_boundaries_geojson()
+
+
+@app.get("/api/v1/ocean/live")
+def get_live_ocean(lat: float = 18.95, lon: float = 72.85) -> dict:
+    loc = Location(lat=lat, lon=lon)
+    return fetch_live_marine_conditions(loc)
+
+
+@app.post("/api/v1/route")
+def calculate_route(request: RouteRequest) -> dict:
+    return plan_safe_route(request.origin, request.destination, request.vessel_speed_kmh)
 
 
 @app.get("/api/v1/evidence/{evidence_id}")
@@ -58,7 +101,13 @@ def get_evidence(evidence_id: str) -> dict:
 def chat(request: ChatRequest) -> dict:
     language = detect_language(request.message, request.language)
     try:
-        result = analyse(request.message, request.location, language)
+        result = analyse(
+            message=request.message,
+            location=request.location,
+            language=language,
+            vessel_type=request.vessel_type,
+            use_live_data=request.use_live_data,
+        )
     except (FileNotFoundError, ValueError, KeyError) as exc:
         raise HTTPException(status_code=503, detail=str(exc)) from exc
     if request.session_id:

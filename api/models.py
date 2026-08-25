@@ -15,11 +15,73 @@ class Location(BaseModel):
     lon: float = Field(ge=-180, le=180)
 
 
+class VesselType(str, Enum):
+    SMALL_BOAT = "small_boat"
+    TRAWLER = "trawler"
+    DEEP_SEA = "deep_sea"
+
+
+class VesselProfile(BaseModel):
+    name: str = "Small Traditional Boat"
+    vessel_type: VesselType = VesselType.SMALL_BOAT
+    beam_m: float = 3.5
+    cruising_speed_kmh: float = 18.0
+    max_wave_m: float = 1.5
+    max_wind_ms: float = 10.0
+    range_km: float = 80.0
+
+
+VESSEL_PROFILES: dict[str, VesselProfile] = {
+    "small_boat": VesselProfile(
+        name="Small Traditional Boat",
+        vessel_type=VesselType.SMALL_BOAT,
+        beam_m=3.5,
+        cruising_speed_kmh=18.0,
+        max_wave_m=1.5,
+        max_wind_ms=10.0,
+        range_km=80.0,
+    ),
+    "trawler": VesselProfile(
+        name="Motorized Mechanized Trawler",
+        vessel_type=VesselType.TRAWLER,
+        beam_m=5.8,
+        cruising_speed_kmh=24.0,
+        max_wave_m=2.5,
+        max_wind_ms=15.0,
+        range_km=180.0,
+    ),
+    "deep_sea": VesselProfile(
+        name="Deep-Sea Commercial Vessel",
+        vessel_type=VesselType.DEEP_SEA,
+        beam_m=9.2,
+        cruising_speed_kmh=32.0,
+        max_wave_m=4.0,
+        max_wind_ms=22.0,
+        range_km=450.0,
+    ),
+}
+
+
 class ChatRequest(BaseModel):
     message: str = Field(min_length=2, max_length=1000)
     location: Location
     language: Literal["auto", "en", "hi", "mr"] = "auto"
     session_id: str | None = None
+    vessel_type: str = "small_boat"
+    use_live_data: bool = False
+
+
+class RouteRequest(BaseModel):
+    origin: Location
+    destination: Location
+    vessel_speed_kmh: float = 18.0
+
+
+class SimulationRequest(BaseModel):
+    location: Location
+    vessel_type: str = "small_boat"
+    simulated_wave_m: float | None = None
+    simulated_wind_ms: float | None = None
 
 
 class Evidence(BaseModel):
