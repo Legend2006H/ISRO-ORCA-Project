@@ -1155,29 +1155,73 @@ input:checked + .slider:before {
   }
 }
 @media (max-width: 900px) {
-  .cyber-sidebar {
-    width: 70px;
-    padding: 20px 8px;
+  .layout-container {
+    flex-direction: column;
   }
-  .brand-text, .sidebar-card, .sidebar-footer, .nav-item span {
-    display: none;
+  .cyber-sidebar {
+    position: static;
+    width: 100%;
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px;
+    border-right: none;
+    border-bottom: 1px solid var(--glass-border);
   }
   .mission-canvas {
-    width: calc(100% - 70px);
-    margin-left: 70px;
-    padding: 20px;
+    margin-left: 0;
+    width: 100%;
+    padding: 16px;
+  }
+  .cyber-nav, .brand-text {
+    display: none;
+  }
+  .sidebar-card {
+    margin: 0;
+    padding: 8px;
+    flex: 1;
+    min-width: 200px;
+  }
+  .vessel-pills {
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+  .vessel-pill {
+    padding: 6px;
+    font-size: 10px;
+  }
+  .vessel-info small {
+    display: none;
+  }
+  .sidebar-footer {
+    display: flex;
+    gap: 12px;
+    align-items: center;
   }
 }
 @media (max-width: 600px) {
-  .cyber-sidebar {
-    display: none;
-  }
-  .mission-canvas {
-    width: 100%;
-    margin-left: 0;
-    padding: 16px;
+  .mission-hud-topbar {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
   }
   .hud-controls {
+    flex-wrap: wrap;
     width: 100%;
+  }
+  .breakdown-meters-grid {
+    grid-template-columns: 1fr;
+  }
+  .cyber-prompt-box {
+    flex-direction: column;
+  }
+  .execute-btn {
+    width: 100%;
+    padding: 12px;
+  }
+  .map-legend-pills {
+    display: none;
   }
 }
