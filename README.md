@@ -19,7 +19,7 @@ python -m pip install -r requirements.txt
 uvicorn api.main:app --reload
 ```
 
-Then open `index.html` in a browser. The dashboard calls `http://127.0.0.1:8000/api/v1/chat` and analyses the supplied PFZ advisory plus cached INCOIS OSF observation.
+Then open `index.html` in a browser. The dashboard calls `http://127.0.0.1:8000` and analyses the supplied PFZ advisory plus cached INCOIS OSF observation.
 
 `POST /api/v1/chat` accepts a message, location, language and optional session ID. It returns the five closest PFZ candidates, deterministic vessel-risk decision, typed evidence and an inspectable trace. It is intentionally **CACHED** decision support, never a live operational advisory.
 
