@@ -1,1 +1,22 @@
+# Environment Variables
 .env
+
+# Python Caches
+__pycache__/
+*.py[cod]
+*$py.class
+.Python
+env/
+venv/
+.pytest_cache/
+
+# IDE & OS Files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Temporary & Binary files
+tmp_*
+*.docx
+*.pdf
