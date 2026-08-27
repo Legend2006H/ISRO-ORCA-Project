@@ -33,7 +33,7 @@ The default demonstration vessel is a 3.5 m beam small fishing boat with a 1.5 m
 
 ## Production architecture
 
-The companion documentation defines the intended production system:
+See [`project_description.md`](project_description.md) and [`development_status.md`](development_status.md) for detailed architecture, the full golden build document, and current handoff status:
 
 `React/TypeScript → FastAPI → orchestrator → marine/weather/GIS agents → deterministic scoring/routing → PostGIS evidence store`
 
@@ -59,3 +59,9 @@ The imported CZMP maps are official visual references for coastal-zone context. 
 2. Load a permitted PFZ/OSF cache into PostGIS and implement nearest-PFZ/geofence operations.
 3. Move the displayed scoring policy to a versioned backend configuration.
 4. Add golden-query regression tests, then replace the static canvas with MapLibre + attributed map tiles.
+
+## CI/CD Pipeline
+This project is configured with GitHub Actions. Any push or pull request to the `main` branch will automatically trigger the workflow in `.github/workflows/python-tests.yml`, which installs dependencies and executes `pytest`.
+
+## AI Agent Workflow
+This repository includes a `GEMINI.md` file which automatically enforces project rules for any Antigravity/Gemini AI agents. AI models will automatically consult `development_status.md` to establish context without needlessly consuming tokens.
