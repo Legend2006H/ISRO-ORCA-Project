@@ -60,8 +60,5 @@ The imported CZMP maps are official visual references for coastal-zone context. 
 3. Move the displayed scoring policy to a versioned backend configuration.
 4. Add golden-query regression tests, then replace the static canvas with MapLibre + attributed map tiles.
 
-## CI/CD Pipeline
-This project is configured with GitHub Actions. Any push or pull request to the `main` branch will automatically trigger the workflow in `.github/workflows/python-tests.yml`, which installs dependencies and executes `pytest`.
-
 ## AI Agent Workflow
 This repository includes a `GEMINI.md` file which automatically enforces project rules for any Antigravity/Gemini AI agents. AI models will automatically consult `development_status.md` to establish context without needlessly consuming tokens.
