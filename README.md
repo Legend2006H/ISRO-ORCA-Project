@@ -201,5 +201,5 @@ ISRO-ORCA-Project/
 ---
 
 <div align="center">
-  <b>⭐ If you like this project, feel free to star the repo and share feedback! ⭐</b>
+  <b>⭐ If you like this project, feel free to star the repo and share feedback!. ⭐</b>
 </div>
