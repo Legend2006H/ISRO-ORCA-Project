@@ -14,6 +14,10 @@ from .offline_service import (
 )
 from .routing import plan_safe_route
 
+from .gemini_agent import get_gemini_api_key, load_env_file
+
+load_env_file()
+
 app = FastAPI(title="ORCA API", version="2.0.0", description="Production-grade AI Marine Intelligence Platform")
 app.add_middleware(
     CORSMiddleware,
@@ -21,7 +25,7 @@ app.add_middleware(
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
-)
+    )
 sessions: dict[str, list[dict[str, str]]] = {}
 
 
@@ -48,11 +52,13 @@ def runtime_styles() -> FileResponse:
 
 @app.get("/health")
 def health() -> dict:
+    has_gemini = bool(get_gemini_api_key())
     return {
         "status": "ok",
         "system": "ORCA Marine Intelligence Platform",
         "version": "2.0.0",
         "source_mode": "CACHED",
+        "gemini_configured": has_gemini,
         "default_location": DEFAULT_LOCATION.model_dump(),
         "available_vessels": list(VESSEL_PROFILES.keys()),
         "warning": "Cached data only; verify official advisories before departure.",
@@ -107,6 +113,7 @@ def chat(request: ChatRequest) -> dict:
             language=language,
             vessel_type=request.vessel_type,
             use_live_data=request.use_live_data,
+            api_key=request.api_key,
         )
     except (FileNotFoundError, ValueError, KeyError) as exc:
         raise HTTPException(status_code=503, detail=str(exc)) from exc

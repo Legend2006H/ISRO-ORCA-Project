@@ -132,6 +132,12 @@
               <span class="locate-icon">⌖</span>
               <span id="locationText">Mumbai Harbour (18.95°N, 72.85°E)</span>
             </button>
+
+            <!-- Gemini API Key Button -->
+            <button class="locate-hud-btn apikey-hud-btn" id="apiKeyBtn" type="button" title="Configure Google Gemini API Key">
+              <span class="locate-icon">🔑</span>
+              <span id="apiKeyBtnLabel">Gemini AI</span>
+            </button>
           </div>
         </header>
 
@@ -176,6 +182,7 @@
               </p>
               <div class="quick-chips">
                 <button class="chip" data-query="Where is the nearest Potential Fishing Zone to me today?">📍 Nearest PFZ</button>
+                <button class="chip" data-query="Which fishing zone is worst or riskiest to avoid?">⚠️ Worst / Riskiest Zone</button>
                 <button class="chip" data-query="Is it safe to venture into the sea tomorrow morning?">🛡️ Safety Check</button>
                 <button class="chip" data-query="Why did ORCA choose Zone A instead of Zone B?">⚖️ Why Zone A vs B?</button>
               </div>
@@ -217,7 +224,13 @@
               <div class="ai-speech-bubble">
                 <div class="bubble-header">
                   <span class="agent-avatar-chip">🤖 GEMINI + AGENTIC REASONER</span>
-                  <span class="source-mode-badge" id="modeChip">PRODUCTION</span>
+                  <div style="display: flex; align-items: center; gap: 8px;">
+                    <button id="bubbleSpeakBtn" class="cyber-btn voice-btn" style="padding: 2px 8px; font-size: 11px; height: 22px;" title="Listen to AI Briefing" type="button">
+                      <span class="speaker-icon">🔊</span>
+                      <span>Audio</span>
+                    </button>
+                    <span class="source-mode-badge" id="modeChip">PRODUCTION</span>
+                  </div>
                 </div>
                 <p class="decision-narrative" id="answer">
                   Analyzing oceanographic and satellite telemetry for Maharashtra coastal slice...
@@ -230,9 +243,9 @@
               <div class="meter-col">
                 <div class="meter-label">
                   <span>🎣 Fishing Potential</span>
-                  <strong id="fishingScore">72</strong>
+                  <strong id="fishingScore">--</strong>
                 </div>
-                <div class="meter-bar-track"><em id="fishingBar" style="width: 72%"></em></div>
+                <div class="meter-bar-track"><em id="fishingBar" style="width: 0%"></em></div>
               </div>
               <div class="meter-col">
                 <div class="meter-label">
@@ -366,6 +379,29 @@
           </article>
         </section>
       </main>
+    </div>
+
+    <!-- Gemini API Key Modal -->
+    <div id="apiKeyModal" class="cyber-modal-overlay" style="display: none;">
+      <div class="cyber-modal-card">
+        <div class="cyber-modal-header">
+          <div class="header-left">
+            <span class="neon-chip purple">AI ENGINE CONFIG</span>
+            <h3>Google Gemini API Key</h3>
+          </div>
+          <button id="closeApiKeyModal" class="modal-close-btn" type="button">&times;</button>
+        </div>
+        <p class="modal-desc">
+          Connect your Google Gemini API key for real-time conversational responses, multilingual explanation, and typo-tolerant chat.
+        </p>
+        <div class="modal-input-group">
+          <input type="password" id="apiKeyInput" placeholder="Paste your Gemini API Key here (AIzaSy...)" autocomplete="off" />
+        </div>
+        <div class="modal-actions">
+          <button id="clearApiKeyBtn" class="cyber-btn voice-btn" type="button">Clear</button>
+          <button id="saveApiKeyBtn" class="execute-btn" type="button" style="padding: 10px 20px;">Save Key ⚡</button>
+        </div>
+      </div>
     </div>
 
     <!-- Scripts -->

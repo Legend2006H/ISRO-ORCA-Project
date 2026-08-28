@@ -46,23 +46,47 @@ def is_in_obstacle(lat: float, lon: float, obstacles: Sequence[ObstacleZone]) ->
     return False, total_penalty, ""
 
 
+def smooth_path(pts: list[dict[str, float]], iterations: int = 2) -> list[dict[str, float]]:
+    """Chaikin's corner-cutting algorithm for natural, smooth nautical navigation curves."""
+    if len(pts) <= 2:
+        return pts
+    current = pts
+    for _ in range(iterations):
+        smoothed = [current[0]]
+        for i in range(len(current) - 1):
+            p0 = current[i]
+            p1 = current[i + 1]
+            q = {
+                "lat": round(0.75 * p0["lat"] + 0.25 * p1["lat"], 5),
+                "lon": round(0.75 * p0["lon"] + 0.25 * p1["lon"], 5),
+            }
+            r = {
+                "lat": round(0.25 * p0["lat"] + 0.75 * p1["lat"], 5),
+                "lon": round(0.25 * p0["lon"] + 0.75 * p1["lon"], 5),
+            }
+            smoothed.extend([q, r])
+        smoothed.append(current[-1])
+        current = smoothed
+    return current
+
+
 def plan_safe_route(
     start: Location,
     end: Location,
     vessel_speed_kmh: float = 18.0,
     obstacles: Sequence[ObstacleZone] = DEFAULT_OBSTACLES,
-    grid_step_deg: float = 0.04,
+    grid_step_deg: float = 0.03,
 ) -> dict:
-    min_lat = min(start.lat, end.lat) - 0.2
-    max_lat = max(start.lat, end.lat) + 0.2
-    min_lon = min(start.lon, end.lon) - 0.2
-    max_lon = max(start.lon, end.lon) + 0.2
+    min_lat = min(start.lat, end.lat) - 0.25
+    max_lat = max(start.lat, end.lat) + 0.25
+    min_lon = min(start.lon, end.lon) - 0.25
+    max_lon = max(start.lon, end.lon) + 0.25
 
     def to_grid(lat: float, lon: float) -> tuple[int, int]:
         return round(lat / grid_step_deg), round(lon / grid_step_deg)
 
     def to_coord(gy: int, gx: int) -> tuple[float, float]:
-        return gy * grid_step_deg, gx * grid_step_deg
+        return round(gy * grid_step_deg, 5), round(gx * grid_step_deg, 5)
 
     start_node = to_grid(start.lat, start.lon)
     end_node = to_grid(end.lat, end.lon)
@@ -78,7 +102,7 @@ def plan_safe_route(
     ]
 
     target_reached = False
-    max_steps = 3000
+    max_steps = 4000
     steps = 0
 
     while frontier and steps < max_steps:
@@ -113,7 +137,7 @@ def plan_safe_route(
                 heapq.heappush(frontier, (f_score, new_cost, nxt))
                 came_from[nxt] = current
 
-    waypoints: list[dict[str, float]] = []
+    raw_waypoints: list[dict[str, float]] = []
     if target_reached:
         curr = end_node
         path_nodes = []
@@ -122,21 +146,28 @@ def plan_safe_route(
             curr = came_from[curr]
         path_nodes.append(start_node)
         path_nodes.reverse()
-        waypoints = [{"lat": start.lat, "lon": start.lon}]
+        raw_waypoints = [{"lat": start.lat, "lon": start.lon}]
         for node in path_nodes[1:-1]:
             n_lat, n_lon = to_coord(*node)
-            waypoints.append({"lat": round(n_lat, 4), "lon": round(n_lon, 4)})
-        waypoints.append({"lat": end.lat, "lon": end.lon})
+            raw_waypoints.append({"lat": round(n_lat, 5), "lon": round(n_lon, 5)})
+        raw_waypoints.append({"lat": end.lat, "lon": end.lon})
     else:
-        num_segments = 6
-        waypoints = []
+        # High-resolution geodesic corridor
+        direct_dist = haversine_km(start.lat, start.lon, end.lat, end.lon)
+        num_segments = max(6, int(direct_dist / 6.0))
+        raw_waypoints = []
         for i in range(num_segments + 1):
             t = i / num_segments
-            waypoints.append({
-                "lat": round(start.lat + t * (end.lat - start.lat), 4),
-                "lon": round(start.lon + t * (end.lon - start.lon), 4),
+            raw_waypoints.append({
+                "lat": round(start.lat + t * (end.lat - start.lat), 5),
+                "lon": round(start.lon + t * (end.lon - start.lon), 5),
             })
 
+    # Smooth the waypoints for natural marine navigation curves
+    waypoints = smooth_path(raw_waypoints, iterations=2)
+    # Ensure start and end points match exactly
+    waypoints[0] = {"lat": round(start.lat, 5), "lon": round(start.lon, 5)}
+    waypoints[-1] = {"lat": round(end.lat, 5), "lon": round(end.lon, 5)}
 
     total_dist = 0.0
     for i in range(len(waypoints) - 1):

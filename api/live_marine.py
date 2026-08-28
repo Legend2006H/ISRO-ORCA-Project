@@ -20,7 +20,7 @@ def fetch_live_marine_conditions(location: Location, timeout_seconds: int = 5) -
             f"latitude={lat}",
             f"longitude={lon}",
             "current=wave_height,wave_direction,wave_period,wind_wave_height,swell_wave_height",
-            "hourly=wave_height,wind_wave_height,swell_wave_height",
+            "hourly=wave_height,wind_wave_height,swell_wave_height,sea_surface_temperature",
             "timezone=Asia%2FKolkata",
         ]
         url = f"{OPEN_METEO_BASE}?" + "&".join(query_args)
@@ -34,6 +34,11 @@ def fetch_live_marine_conditions(location: Location, timeout_seconds: int = 5) -
         swell_h = float(curr.get("swell_wave_height") or 0.8)
         wind_spd = round(max(3.0, wave_h * 3.6), 1)
 
+        # Try to extract SST from hourly data if available
+        hourly = data.get("hourly", {})
+        sst_values = hourly.get("sea_surface_temperature", [])
+        sst = round(sum(v for v in sst_values[:6] if v is not None) / max(1, sum(1 for v in sst_values[:6] if v is not None)), 1) if sst_values else 28.5
+
         return {
             "source_mode": "LIVE",
             "source_name": "Open-Meteo Marine Live Feed",
@@ -46,7 +51,7 @@ def fetch_live_marine_conditions(location: Location, timeout_seconds: int = 5) -
                 {"parameter": "surface_current_speed", "value": 0.25, "unit": "m/s", "label": "Surface Current"},
                 {"parameter": "wave_direction", "value": wave_dir, "unit": "deg", "label": "Wave Direction"},
                 {"parameter": "wind_direction", "value": 280.0, "unit": "deg", "label": "Wind Direction"},
-                {"parameter": "sea_surface_temperature", "value": 28.5, "unit": "°C", "label": "Sea Surface Temperature"},
+                {"parameter": "sea_surface_temperature", "value": sst, "unit": "°C", "label": "Sea Surface Temperature"},
             ],
             "hourly_forecast": data.get("hourly", {}),
         }

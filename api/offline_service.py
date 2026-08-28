@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import json
 import math
+import re
 from datetime import UTC, datetime
 from pathlib import Path
 
@@ -20,9 +21,135 @@ from .scoring import rank_zones
 
 ROOT = Path(__file__).resolve().parents[1]
 DATA = ROOT / "data" / "raw"
-DEFAULT_LOCATION = Location(lat=18.95, lon=72.85)
-VESSEL = {"type": "small fishing boat", "beam_m": 3.5, "cruising_speed_kmh": 18.0,
-          "max_wave_m": 1.5, "max_wind_ms": 10.0, "range_km": 80.0}
+DEFAULT_LOCATION = Location(lat=18.95, lon=72.85, name="Mumbai Harbour")
+VESSEL = {
+    "type": "small fishing boat",
+    "beam_m": 3.5,
+    "cruising_speed_kmh": 18.0,
+    "max_wave_m": 1.5,
+    "max_wind_ms": 10.0,
+    "range_km": 80.0,
+}
+
+COASTAL_LOCATIONS: dict[str, tuple[float, float, str]] = {
+    # Maharashtra / Konkan Coast
+    "mumbai": (18.95, 72.85, "Mumbai Harbour"),
+    "bombay": (18.95, 72.85, "Mumbai Harbour"),
+    "colaba": (18.91, 72.81, "Colaba, Mumbai"),
+    "cuffe parade": (18.91, 72.82, "Cuffe Parade, Mumbai"),
+    "cuffpared": (18.91, 72.82, "Cuffe Parade, Mumbai"),
+    "sassoon dock": (18.91, 72.83, "Sassoon Dock, Mumbai"),
+    "sasoondock": (18.91, 72.83, "Sassoon Dock, Mumbai"),
+    "mazgaon": (18.96, 72.85, "Mazgaon, Mumbai"),
+    "malabar": (18.95, 72.79, "Malabar Port, Mumbai"),
+    "versova": (19.13, 72.81, "Versova, Mumbai"),
+    "madh": (19.14, 72.79, "Madh Island, Mumbai"),
+    "manori": (19.20, 72.78, "Manori, Mumbai"),
+    "uttan": (19.28, 72.78, "Uttan, Bhayandar"),
+    "vasai": (19.33, 72.78, "Vasai, Palghar"),
+    "arnala": (19.45, 72.73, "Arnala, Palghar"),
+    "satpati": (19.73, 72.70, "Satpati, Palghar"),
+    "tarapur": (19.86, 72.68, "Tarapur, Palghar"),
+    "dahanu": (19.97, 72.73, "Dahanu, Palghar"),
+    "navgaon": (18.74, 72.88, "Navgaon, Raigad"),
+    "nagaon": (18.62, 72.90, "Nagaon, Alibag"),
+    "sasawane": (18.82, 72.84, "Sasawane, Raigad"),
+    "thal": (18.72, 72.86, "Thal, Alibag"),
+    "varsoli": (18.67, 72.87, "Varsoli, Alibag"),
+    "alibag": (18.64, 72.87, "Alibag, Raigad"),
+    "alibaug": (18.64, 72.87, "Alibag, Raigad"),
+    "kashid": (18.44, 72.91, "Kashid, Raigad"),
+    "murud": (18.33, 72.96, "Murud-Janjira, Raigad"),
+    "rajpuri": (18.29, 72.98, "Rajpuri, Raigad"),
+    "dighi": (18.28, 72.99, "Dighi, Raigad"),
+    "diveagar": (18.17, 73.00, "Diveagar, Raigad"),
+    "srivardhan": (18.04, 73.01, "Shrivardhan, Raigad"),
+    "shrivardhan": (18.04, 73.01, "Shrivardhan, Raigad"),
+    "harihareshwar": (17.99, 73.02, "Harihareshwar, Raigad"),
+    "bankot": (17.97, 73.05, "Bankot, Ratnagiri"),
+    "velas": (17.96, 73.03, "Velas, Ratnagiri"),
+    "kelshi": (17.92, 73.06, "Kelshi, Ratnagiri"),
+    "anjarle": (17.85, 73.09, "Anjarle, Ratnagiri"),
+    "harne": (17.81, 73.09, "Harne Port, Ratnagiri"),
+    "dapoli": (17.76, 73.18, "Dapoli, Ratnagiri"),
+    "dabhol": (17.58, 73.17, "Dabhol, Ratnagiri"),
+    "anjanvel": (17.53, 73.16, "Anjanvel, Ratnagiri"),
+    "guhagar": (17.48, 73.19, "Guhagar, Ratnagiri"),
+    "velneshwar": (17.38, 73.20, "Velneshwar, Ratnagiri"),
+    "jaigad": (17.30, 73.21, "Jaigad, Ratnagiri"),
+    "ganpatipule": (17.15, 73.26, "Ganpatipule, Ratnagiri"),
+    "ratnagiri": (16.99, 73.30, "Ratnagiri Port (Mirkarwada)"),
+    "mirkarwada": (16.99, 73.28, "Mirkarwada, Ratnagiri"),
+    "bhatye": (16.96, 73.29, "Bhatye, Ratnagiri"),
+    "pawas": (16.89, 73.31, "Pawas, Ratnagiri"),
+    "purnagad": (16.81, 73.31, "Purnagad, Ratnagiri"),
+    "ambolgad": (16.63, 73.34, "Ambolgad, Ratnagiri"),
+    "vijaydurg": (16.56, 73.33, "Vijaydurg Port"),
+    "devgad": (16.37, 73.38, "Devgad, Sindhudurg"),
+    "devgarh": (16.37, 73.38, "Devgad, Sindhudurg"),
+    "kunkeshwar": (16.34, 73.39, "Kunkeshwar, Sindhudurg"),
+    "mithbao": (16.29, 73.43, "Mithbao, Sindhudurg"),
+    "achara": (16.20, 73.45, "Achara, Sindhudurg"),
+    "malvan": (16.06, 73.47, "Malvan (Sindhudurg)"),
+    "sindhudurg": (16.06, 73.47, "Sindhudurg (Malvan)"),
+    "tarkarli": (16.03, 73.49, "Tarkarli, Sindhudurg"),
+    "deobag": (15.98, 73.53, "Deobag, Sindhudurg"),
+    "nivati": (15.93, 73.56, "Nivati, Sindhudurg"),
+    "vengurla": (15.86, 73.63, "Vengurla, Sindhudurg"),
+    "shiroda": (15.78, 73.67, "Shiroda, Sindhudurg"),
+    "redi": (15.75, 73.67, "Redi Port, Sindhudurg"),
+    # Karnataka Coast
+    "karwar": (14.81, 74.13, "Karwar Port, Karnataka"),
+    "ankola": (14.66, 74.29, "Ankola, Karnataka"),
+    "kumta": (14.42, 74.41, "Kumta, Karnataka"),
+    "honnavar": (14.28, 74.45, "Honnavar, Karnataka"),
+    "bhatkal": (13.97, 74.55, "Bhatkal, Karnataka"),
+    "malpe": (13.35, 74.70, "Malpe Port, Udupi"),
+    "udupi": (13.34, 74.74, "Udupi, Karnataka"),
+    "mangalore": (12.91, 74.85, "New Mangalore Port"),
+    "mangaluru": (12.91, 74.85, "New Mangalore Port"),
+    # Kerala Coast
+    "kasaragod": (12.50, 74.98, "Kasaragod, Kerala"),
+    "kannur": (11.87, 75.37, "Kannur, Kerala"),
+    "kozhikode": (11.25, 75.78, "Kozhikode, Kerala"),
+    "calicut": (11.25, 75.78, "Kozhikode, Kerala"),
+    "kochi": (9.93, 76.26, "Cochin / Kochi Port, Kerala"),
+    "cochin": (9.93, 76.26, "Cochin / Kochi Port, Kerala"),
+    # Gujarat Coast
+    "veraval": (20.90, 70.36, "Veraval, Gujarat"),
+    "porbandar": (21.64, 69.60, "Porbandar, Gujarat"),
+    "diu": (20.71, 70.98, "Diu Port"),
+    "daman": (20.42, 72.83, "Daman"),
+    "surat": (21.17, 72.83, "Surat, Gujarat"),
+    # East Coast
+    "chennai": (13.08, 80.27, "Chennai Port"),
+    "visakhapatnam": (17.68, 83.21, "Visakhapatnam (Vizag)"),
+    "vizag": (17.68, 83.21, "Visakhapatnam (Vizag)"),
+    "puri": (19.81, 85.83, "Puri, Odisha"),
+    "paradeep": (20.31, 86.61, "Paradip, Odisha"),
+    "paradip": (20.31, 86.61, "Paradip, Odisha"),
+}
+
+
+def extract_location_from_text(message: str) -> Location | None:
+    """Extract coastal location or coordinates mentioned in user query."""
+    m = message.lower()
+    for loc_key, (lat, lon, name) in sorted(COASTAL_LOCATIONS.items(), key=lambda x: len(x[0]), reverse=True):
+        pattern = r"(?:\b|_)" + re.escape(loc_key) + r"(?:\b|_)"
+        if re.search(pattern, m):
+            return Location(lat=lat, lon=lon, name=name)
+
+    # Check for coordinate pattern e.g. "15.4, 73.8" or "15.4 N, 73.8 E"
+    coord_match = re.search(r"(\d{1,2}\.?\d*)\s*°?\s*([nN])?\s*[,/ ]\s*(\d{1,3}\.?\d*)\s*°?\s*([eE])?", message)
+    if coord_match:
+        try:
+            lat = float(coord_match.group(1))
+            lon = float(coord_match.group(3))
+            if -90 <= lat <= 90 and -180 <= lon <= 180:
+                return Location(lat=lat, lon=lon, name=f"Custom ({lat:.2f}°N, {lon:.2f}°E)")
+        except (ValueError, IndexError):
+            pass
+    return None
 
 
 def _distance_km(a: Location, b: Location) -> float:
@@ -124,78 +251,134 @@ def detect_language(message: str, selected: str) -> str:
 
 def detect_intent(message: str) -> str:
     m = message.lower()
-    if any(k in m for k in ("why", "instead", "compare", "zone a", "zone b", "का निवडले", "तुलना", "क्यों चुना")):
+    worst_tokens = (
+        "worst", "wrost", "wrst", "least", "bad", "riskiest", "riski", "danger", "dngr",
+        "avoid", "kharaab", "khrab", "kharab", "सबसे खराब", "खराब", "नुकसान",
+        "वाईट", "सर्वात वाईट", "धोकादायक"
+    )
+    if any(k in m for k in worst_tokens):
+        return "worst"
+
+    comp_tokens = (
+        "why", "instead", "insted", "compare", "compair", "vs", "zone a", "zone b",
+        "difference", "diff", "का निवडले", "तुलना", "क्यों चुना", "फरक"
+    )
+    if any(k in m for k in comp_tokens):
         return "comparison"
-    if any(k in m for k in ("nearest", "कहाँ", "कुठे", "जवळ", "निकटतम", "location", "distance", "to me")):
+
+    nearest_tokens = (
+        "nearest", "nrst", "closest", "closst", "near", "whr", "wer", "where",
+        "कहाँ", "कुठे", "जवळ", "निकटतम", "location", "distance", "to me", "kidhar", "kaha"
+    )
+    if any(k in m for k in nearest_tokens):
         return "nearest"
-    if any(k in m for k in ("safe", "सुरक्षित", "safety", "hazard", "risk", "weather", "alert", "धोका", "हवामान", "sail", "venture")):
+
+    safety_tokens = (
+        "safe", "saf", "sfe", "safety", "sfety", "hazard", "hazar", "risk", "risky",
+        "weather", "wether", "weathr", "alert", "dhoka", "धोका", "हवामान", "surakshit", "सुरक्षित",
+        "sail", "venture", "wave", "wav", "wind", "wnd", "storm", "can i go", "shuld i go",
+        "ja sakte", "jaa sakte", "jayche ka"
+    )
+    if any(k in m for k in safety_tokens):
         return "safety"
+
     return "recommendation"
 
 
-def _answer(language: str, intent: str, blocked: bool, top: ZoneCandidate, alt: ZoneCandidate | None, wave: float, wind: float, swell: float, vessel_name: str, max_wave: float) -> str:
+def _answer(
+    language: str,
+    intent: str,
+    blocked: bool,
+    top: ZoneCandidate,
+    alt: ZoneCandidate | None,
+    worst: ZoneCandidate | None,
+    wave: float,
+    wind: float,
+    swell: float,
+    vessel_name: str,
+    max_wave: float,
+    origin_name: str = "Mumbai Harbour",
+) -> str:
     alt_name = alt.name if alt else "Zone B"
     alt_dist = alt.distance_km if alt else 0.0
+    worst_name = worst.name if worst else top.name
+    worst_dist = worst.distance_km if worst else top.distance_km
+    worst_score = worst.overall_score if worst else top.overall_score
+
+    if intent == "worst":
+        if blocked:
+            messages = {
+                "en": f"From {origin_name}, the least favorable zone is {worst_name} ({worst_dist:.1f} km away, composite score: {worst_score:.0f}/100, fishing yield: {worst.fishing_score if worst else 0:.0f}/100). Critical: Departure is currently BLOCKED for {vessel_name} because {wave:.1f} m waves exceed the {max_wave} m vessel limit.",
+                "hi": f"{origin_name} से सबसे कम अनुकूल क्षेत्र {worst_name} है ({worst_dist:.1f} किमी दूर, कुल स्कोर: {worst_score:.0f}/100)। महत्वपूर्ण चेतावनी: {wave:.1f} मीटर लहरों के कारण {vessel_name} (सीमा {max_wave} मी) के लिए प्रस्थान पूरी तरह अवरुद्ध है।",
+                "mr": f"{origin_name} पासून सर्वात कमी अनुकूल झोन {worst_name} आहे ({worst_dist:.1f} किमी दूर, एकूण स्कोर: {worst_score:.0f}/100). इशारा: {wave:.1f} मीटर लाटांमुळे {vessel_name} (मर्यादा {max_wave} मी) साठी प्रस्थान प्रतिबंधित आहे.",
+            }
+        else:
+            messages = {
+                "en": f"From {origin_name}, the lowest ranked zone is {worst_name} ({worst_dist:.1f} km away, overall score: {worst_score:.0f}/100). We recommend avoiding it in favor of {top.name} ({top.distance_km:.1f} km, score: {top.overall_score:.0f}/100).",
+                "hi": f"{origin_name} से सबसे कम स्कोर वाला क्षेत्र {worst_name} है ({worst_dist:.1f} किमी, स्कोर: {worst_score:.0f}/100)। इसके बजाय {top.name} ({top.distance_km:.1f} किमी) का चयन करने की सलाह दी जाती है।",
+                "mr": f"{origin_name} पासून सर्वात कमी गुणांचा झोन {worst_name} आहे ({worst_dist:.1f} किमी). त्याऐवजी {top.name} ({top.distance_km:.1f} किमी) ला प्राधान्य द्या.",
+            }
+        return messages.get(language, messages["en"])
 
     if intent == "comparison":
         if blocked:
             messages = {
-                "en": f"{top.name} ({top.distance_km:.1f} km) was ranked above {alt_name} ({alt_dist:.1f} km) due to shorter approach distance and higher accessibility score ({top.accessibility_score:.0f} vs {alt.accessibility_score if alt else 0:.0f} pts). Note: Departure is currently BLOCKED for all zones due to {wave:.1f} m waves exceeding the {vessel_name} limit ({max_wave} m).",
+                "en": f"{top.name} ({top.distance_km:.1f} km from {origin_name}) was ranked above {alt_name} ({alt_dist:.1f} km) due to shorter approach distance and higher accessibility score ({top.accessibility_score:.0f} vs {alt.accessibility_score if alt else 0:.0f} pts). Note: Departure is currently BLOCKED for all zones due to {wave:.1f} m waves exceeding the {vessel_name} limit ({max_wave} m).",
                 "hi": f"{top.name} ({top.distance_km:.1f} किमी) को {alt_name} ({alt_dist:.1f} किमी) की तुलना में कम दूरी और बेहतर पहुंच स्कोर ({top.accessibility_score:.0f} अंक) के कारण चुना गया। हालांकि, {wave:.1f} मीटर ऊंची लहरों (सीमा: {max_wave} मी) के कारण सभी क्षेत्रों में प्रस्थान प्रतिबंधित है।",
                 "mr": f"{top.name} ({top.distance_km:.1f} किमी) ला {alt_name} ({alt_dist:.1f} किमी) पेक्षा कमी अंतर आणि अधिक सुलभतेमुळे ({top.accessibility_score:.0f} गुण) वरचे स्थान मिळाले. परंतु {wave:.1f} मीटर लाटांमुळे (मर्यादा: {max_wave} मी) सर्व झोनमध्ये प्रस्थान प्रतिबंधित आहे।",
             }
         else:
             messages = {
-                "en": f"{top.name} ({top.distance_km:.1f} km) is preferred over {alt_name} ({alt_dist:.1f} km) due to superior accessibility ({top.accessibility_score:.0f} pts) and safe sea conditions within {vessel_name} limits.",
+                "en": f"{top.name} ({top.distance_km:.1f} km from {origin_name}) is preferred over {alt_name} ({alt_dist:.1f} km) due to superior accessibility ({top.accessibility_score:.0f} pts) and safe sea conditions within {vessel_name} limits.",
                 "hi": f"{top.name} ({top.distance_km:.1f} किमी) को {alt_name} ({alt_dist:.1f} किमी) से बेहतर माना गया क्योंकि यह निकट है और {vessel_name} के लिए समुद्र सुरक्षित है।",
                 "mr": f"{top.name} ({top.distance_km:.1f} किमी) ला {alt_name} ({alt_dist:.1f} किमी) पेक्षा प्राधान्य दिले गेले कारण ते जवळ आहे आणि {vessel_name} साठी समुद्र सुरक्षित आहे।",
             }
-        return messages[language]
+        return messages.get(language, messages["en"])
 
     if intent == "nearest":
         if blocked:
             messages = {
-                "en": f"The nearest Potential Fishing Zone is {top.name}, located {top.distance_km:.1f} km offshore ({top.location.lat:.2f}°N, {top.location.lon:.2f}°E), followed by {alt_name} ({alt_dist:.1f} km). Caution: Wave height is {wave:.1f} m; departure for {vessel_name} is currently not permitted.",
-                "hi": f"निकटतम संभावित मत्स्य पालन क्षेत्र (PFZ) {top.name} है, जो {top.distance_km:.1f} किमी दूर ({top.location.lat:.2f}°N, {top.location.lon:.2f}°E) पर स्थित है, जिसके बाद {alt_name} ({alt_dist:.1f} किमी) है। चेतावनी: {wave:.1f} मीटर ऊंची लहरों के कारण {vessel_name} के लिए प्रस्थान की अनुमति नहीं है।",
-                "mr": f"सर्वात जवळचा PFZ {top.name} आहे, जो {top.distance_km:.1f} किमी अंतरावर ({top.location.lat:.2f}°N, {top.location.lon:.2f}°E) आहे, त्यानंतर {alt_name} ({alt_dist:.1f} किमी) आहे. इशारा: {wave:.1f} मीटर लाटांमुळे {vessel_name} साठी निघण्यास मनाई आहे।",
+                "en": f"The nearest Potential Fishing Zone from {origin_name} is {top.name}, located {top.distance_km:.1f} km offshore ({top.location.lat:.2f}°N, {top.location.lon:.2f}°E), followed by {alt_name} ({alt_dist:.1f} km). Caution: Wave height is {wave:.1f} m; departure for {vessel_name} is currently not permitted.",
+                "hi": f"{origin_name} से निकटतम संभावित मत्स्य पालन क्षेत्र (PFZ) {top.name} है, जो {top.distance_km:.1f} किमी दूर ({top.location.lat:.2f}°N, {top.location.lon:.2f}°E) पर स्थित है, जिसके बाद {alt_name} ({alt_dist:.1f} किमी) है। चेतावनी: {wave:.1f} मीटर ऊंची लहरों के कारण {vessel_name} के लिए प्रस्थान की अनुमति नहीं है।",
+                "mr": f"{origin_name} पासून सर्वात जवळचा PFZ {top.name} आहे, जो {top.distance_km:.1f} किमी अंतरावर ({top.location.lat:.2f}°N, {top.location.lon:.2f}°E) आहे, त्यानंतर {alt_name} ({alt_dist:.1f} किमी) आहे. इशारा: {wave:.1f} मीटर लाटांमुळे {vessel_name} साठी निघण्यास मनाई आहे।",
             }
         else:
             messages = {
-                "en": f"The nearest Potential Fishing Zone is {top.name}, located {top.distance_km:.1f} km away ({top.location.lat:.2f}°N, {top.location.lon:.2f}°E). Departure is permitted for {vessel_name}.",
-                "hi": f"निकटतम PFZ {top.name} है, जो {top.distance_km:.1f} किमी दूर ({top.location.lat:.2f}°N, {top.location.lon:.2f}°E) है। {vessel_name} के लिए प्रस्थान सुरक्षित है।",
-                "mr": f"सर्वात जवळचा PFZ {top.name} आहे, जो {top.distance_km:.1f} किमी अंतरावर ({top.location.lat:.2f}°N, {top.location.lon:.2f}°E) आहे। {vessel_name} साठी प्रस्थान सुरक्षित आहे।",
+                "en": f"The nearest Potential Fishing Zone from {origin_name} is {top.name}, located {top.distance_km:.1f} km away ({top.location.lat:.2f}°N, {top.location.lon:.2f}°E). Departure is permitted for {vessel_name}.",
+                "hi": f"{origin_name} से निकटतम PFZ {top.name} है, जो {top.distance_km:.1f} किमी दूर ({top.location.lat:.2f}°N, {top.location.lon:.2f}°E) है। {vessel_name} के लिए प्रस्थान सुरक्षित है।",
+                "mr": f"{origin_name} पासून सर्वात जवळचा PFZ {top.name} आहे, जो {top.distance_km:.1f} किमी अंतरावर ({top.location.lat:.2f}°N, {top.location.lon:.2f}°E) आहे। {vessel_name} साठी प्रस्थान सुरक्षित आहे।",
             }
-        return messages[language]
+        return messages.get(language, messages["en"])
 
     if intent == "safety":
         if blocked:
             messages = {
-                "en": f"Sea Conditions Assessment: HIGH RISK — Do Not Depart for {vessel_name}. Significant wave height is {wave:.1f} m (exceeds {max_wave} m vessel limit), with {wind:.1f} m/s wind and {swell:.1f} m swell. Recheck official INCOIS OSF and IMD warnings.",
-                "hi": f"समुद्र स्थिति मूल्यांकन: उच्च जोखिम — {vessel_name} के लिए प्रस्थान न करें। लहरों की ऊंचाई {wave:.1f} मीटर है (नौका सीमा {max_wave} मी से अधिक), हवा {wind:.1f} मी/से और स्वेल {swell:.1f} मी है। आधिकारिक INCOIS सलाह दोबारा देखें।",
-                "mr": f"समुद्रस्थिती मूल्यांकन: उच्च धोका — {vessel_name} साठी प्रस्थान करू नका. लाटांची उंची {wave:.1f} मीटर आहे (नौका मर्यादा {max_wave} मी पेक्षा जास्त), वारा {wind:.1f} मी/से आणि स्वेल {swell:.1f} मी आहे. अधिकृत INCOIS सूचना पुन्हा तपासा।",
+                "en": f"Sea Conditions Assessment for {origin_name}: HIGH RISK — Do Not Depart for {vessel_name}. Significant wave height is {wave:.1f} m (exceeds {max_wave} m vessel limit), with {wind:.1f} m/s wind and {swell:.1f} m swell. Recheck official INCOIS OSF and IMD warnings.",
+                "hi": f"{origin_name} के लिए समुद्र स्थिति मूल्यांकन: उच्च जोखिम — {vessel_name} के लिए प्रस्थान न करें। लहरों की ऊंचाई {wave:.1f} मीटर है (नौका सीमा {max_wave} मी से अधिक), हवा {wind:.1f} मी/से और स्वेल {swell:.1f} मी है। आधिकारिक INCOIS सलाह दोबारा देखें।",
+                "mr": f"{origin_name} साठी समुद्रस्थिती मूल्यांकन: उच्च धोका — {vessel_name} साठी प्रस्थान करू नका. लाटांची उंची {wave:.1f} मीटर आहे (नौका मर्यादा {max_wave} मी पेक्षा जास्त), वारा {wind:.1f} मी/से आणि स्वेल {swell:.1f} मी आहे. अधिकृत INCOIS सूचना पुन्हा तपासा।",
             }
         else:
             messages = {
-                "en": f"Sea Conditions Assessment: SAFE TO DEPART. Wave height {wave:.1f} m, wind {wind:.1f} m/s, swell {swell:.1f} m — within safe limits for {vessel_name} (limit: {max_wave} m).",
-                "hi": f"समुद्र स्थिति मूल्यांकन: प्रस्थान सुरक्षित। लहर {wave:.1f} मी, हवा {wind:.1f} मी/से — {vessel_name} के लिए सुरक्षित सीमा (सीमा: {max_wave} मी) के भीतर।",
-                "mr": f"समुद्रस्थिती मूल्यांकन: प्रस्थान सुरक्षित. लाटा {wave:.1f} मी, वारा {wind:.1f} मी/से — {vessel_name} च्या सुरक्षित मर्यादेत (मर्यादा: {max_wave} मी)।",
+                "en": f"Sea Conditions Assessment for {origin_name}: SAFE TO DEPART. Wave height {wave:.1f} m, wind {wind:.1f} m/s, swell {swell:.1f} m — within safe limits for {vessel_name} (limit: {max_wave} m).",
+                "hi": f"{origin_name} के लिए समुद्र स्थिति मूल्यांकन: प्रस्थान सुरक्षित। लहर {wave:.1f} मी, हवा {wind:.1f} मी/से — {vessel_name} के लिए सुरक्षित सीमा (सीमा: {max_wave} मी) के भीतर।",
+                "mr": f"{origin_name} साठी समुद्रस्थिती मूल्यांकन: प्रस्थान सुरक्षित. लाटा {wave:.1f} मी, वारा {wind:.1f} मी/से — {vessel_name} च्या सुरक्षित मर्यादेत (मर्यादा: {max_wave} मी)।",
             }
-        return messages[language]
+        return messages.get(language, messages["en"])
 
     # default recommendation intent
     if blocked:
         messages = {
-            "en": f"Top candidate fishing zone is {top.name} ({top.distance_km:.1f} km away, overall score: {top.overall_score:.0f}/100, fishing potential: {top.fishing_score:.0f}/100). Caution: Departure is blocked for {vessel_name} due to active sea-state advisory ({wave:.1f} m waves vs {max_wave} m limit).",
-            "hi": f"शीर्ष अनुशंसित मत्स्य पालन क्षेत्र {top.name} है ({top.distance_km:.1f} किमी दूर, कुल स्कोर: {top.overall_score:.0f}/100, मत्स्य क्षमता: {top.fishing_score:.0f}/100)। चेतावनी: {wave:.1f} मीटर लहरों के कारण {vessel_name} का प्रस्थान अवरुद्ध है।",
-            "mr": f"सर्वोत्तम शिफारस केलेला मासेमारी झोन {top.name} आहे ({top.distance_km:.1f} किमी दूर, एकूण स्कोर: {top.overall_score:.0f}/100, मासेमारी क्षमता: {top.fishing_score:.0f}/100). इशारा: {wave:.1f} मीटर लाटांमुळे {vessel_name} साठी प्रस्थान प्रतिबंधित आहे।",
+            "en": f"Top candidate fishing zone near {origin_name} is {top.name} ({top.distance_km:.1f} km away, overall score: {top.overall_score:.0f}/100, fishing potential: {top.fishing_score:.0f}/100). Caution: Departure is blocked for {vessel_name} due to active sea-state advisory ({wave:.1f} m waves vs {max_wave} m limit).",
+            "hi": f"{origin_name} के पास शीर्ष अनुशंसित मत्स्य पालन क्षेत्र {top.name} है ({top.distance_km:.1f} किमी दूर, कुल स्कोर: {top.overall_score:.0f}/100, मत्स्य क्षमता: {top.fishing_score:.0f}/100)। चेतावनी: {wave:.1f} मीटर लहरों के कारण {vessel_name} का प्रस्थान अवरुद्ध है।",
+            "mr": f"{origin_name} जवळ सर्वोत्तम शिफारस केलेला मासेमारी झोन {top.name} आहे ({top.distance_km:.1f} किमी दूर, एकूण स्कोर: {top.overall_score:.0f}/100, मासेमारी क्षमता: {top.fishing_score:.0f}/100). इशारा: {wave:.1f} मीटर लाटांमुळे {vessel_name} साठी प्रस्थान प्रतिबंधित आहे।",
         }
-        return messages[language]
+        return messages.get(language, messages["en"])
     messages = {
-        "en": f"Recommended zone is {top.name}, about {top.distance_km:.1f} km away (overall score: {top.overall_score:.0f}/100). Sea conditions are within safe limits for {vessel_name}. Confirm official advisories before departure.",
-        "hi": f"अनुशंसित क्षेत्र {top.name} है, लगभग {top.distance_km:.1f} किमी दूर (कुल स्कोर: {top.overall_score:.0f}/100)। {vessel_name} के लिए समुद्र की स्थिति सुरक्षित है। प्रस्थान से पहले आधिकारिक सलाह की पुष्टि करें।",
-        "mr": f"शिफारस केलेला झोन {top.name} आहे, सुमारे {top.distance_km:.1f} किमी दूर (एकूण स्कोर: {top.overall_score:.0f}/100). {vessel_name} साठी समुद्रस्थिती सुरक्षित आहे. निघण्यापूर्वी अधिकृत सूचना तपासा।",
+        "en": f"Recommended zone near {origin_name} is {top.name}, about {top.distance_km:.1f} km away (overall score: {top.overall_score:.0f}/100). Sea conditions are within safe limits for {vessel_name}. Confirm official advisories before departure.",
+        "hi": f"{origin_name} के पास अनुशंसित क्षेत्र {top.name} है, लगभग {top.distance_km:.1f} किमी दूर (कुल स्कोर: {top.overall_score:.0f}/100)। {vessel_name} के लिए समुद्र की स्थिति सुरक्षित है। प्रस्थान से पहले आधिकारिक सलाह की पुष्टि करें।",
+        "mr": f"{origin_name} जवळ शिफारस केलेला झोन {top.name} आहे, सुमारे {top.distance_km:.1f} किमी दूर (एकूण स्कोर: {top.overall_score:.0f}/100). {vessel_name} साठी समुद्रस्थिती सुरक्षित आहे. निघण्यापूर्वी अधिकृत सूचना तपासा।",
     }
-    return messages[language]
+    return messages.get(language, messages["en"])
 
 
 def analyse(
@@ -204,22 +387,38 @@ def analyse(
     language: str,
     vessel_type: str = "small_boat",
     use_live_data: bool = False,
+    api_key: str | None = None,
 ) -> dict:
     """Create one explainable response with deterministic risk scoring, A* navigation, and evidence attachment."""
     now = datetime.now(UTC)
     validity, pfz = _latest_pfz()
     vessel = VESSEL_PROFILES.get(vessel_type, VESSEL_PROFILES["small_boat"])
 
+    # Extract location entity from message if mentioned (e.g. Ratnagiri, Malvan, etc.)
+    extracted_loc = extract_location_from_text(message)
+    if extracted_loc is not None:
+        if location and location.lat and location.lon:
+            # If the user clicked coordinates near this named region (within ~100km / 0.9 deg), preserve exact clicked point
+            if math.hypot(location.lat - extracted_loc.lat, location.lon - extracted_loc.lon) < 0.9:
+                effective_location = Location(lat=location.lat, lon=location.lon, name=location.name or extracted_loc.name)
+            else:
+                effective_location = extracted_loc
+        else:
+            effective_location = extracted_loc
+    else:
+        effective_location = location
+    origin_name = effective_location.name or f"Point ({effective_location.lat:.2f}°N, {effective_location.lon:.2f}°E)"
+
     # Decide between live feed and cached observations
     source_mode = SourceMode.CACHED
     if use_live_data:
-        live_feed = fetch_live_marine_conditions(location)
+        live_feed = fetch_live_marine_conditions(effective_location)
         source_mode = SourceMode.LIVE if live_feed.get("source_mode") == "LIVE" else SourceMode.CACHED
         obs_list = live_feed.get("observations", [])
         observations = {item["parameter"]: item for item in obs_list}
         source_name = live_feed.get("source_name", "Open-Meteo Live Marine Feed")
         retrieved = now
-        ocean_location = location
+        ocean_location = effective_location
     else:
         ocean = _ocean_cache()
         retrieved = _time(ocean.get("retrieved_at"), now)
@@ -241,7 +440,7 @@ def analyse(
         parameter="pfz_validity",
         value=validity,
         unit="",
-        location=location,
+        location=effective_location,
         valid_time=valid_time,
         issued_time=retrieved,
         retrieved_at=retrieved,
@@ -281,20 +480,38 @@ def analyse(
                 quality="CONTEXT_ONLY" if zone.enforcement == "CONTEXT_ONLY" else "OFFICIAL_BOUNDARY",
             ))
 
-    closest = sorted(pfz, key=lambda item: _distance_km(location, Location(lat=item.latitude, lon=item.longitude)))[:5]
+    closest = sorted(pfz, key=lambda item: _distance_km(effective_location, Location(lat=item.latitude, lon=item.longitude)))[:5]
+
+    # --- Dynamic fishing sub-scores based on live/cached ocean telemetry ---
+    sst_raw = float(observations.get("sea_surface_temperature", {}).get("value", 28.0))
+    # SST score: peaks at 28°C for tropical Indian Ocean fishing, drops off outside 24-32 range
+    sst_base = max(20, 100 - 12.5 * abs(sst_raw - 28.0))
+    # Chlorophyll proxy: moderate currents + upwelling (cooler SST) boost productivity
+    chl_base = max(25, min(90, 50 + 15 * min(current, 0.5) / 0.5 + 10 * max(0, 28.5 - sst_raw)))
+    # Ocean context: calmer seas = better fishing context
+    ocean_ctx_base = max(20, min(95, 70 - 20 * (swell / 1.5) + 10 * (1.0 - min(current, 1.0))))
+
     candidates = []
     for number, item in enumerate(closest, 1):
         target = Location(lat=item.latitude, lon=item.longitude)
-        distance = _distance_km(location, target)
+        distance = _distance_km(effective_location, target)
+
+        # Per-zone variation: closer zones get a slight PFZ reliability bonus
+        dist_factor = max(0, 1.0 - distance / 200.0)  # 1.0 at 0km, 0.0 at 200km
+        pfz_dynamic = min(100, round(85 + 10 * dist_factor + 3 * (sst_base - 50) / 50, 1))
+        chl_dynamic = min(100, round(chl_base + 5 * dist_factor - 2 * number, 1))
+        sst_dynamic = min(100, round(sst_base + 3 * dist_factor, 1))
+        ocean_ctx_dynamic = min(100, round(ocean_ctx_base + 4 * dist_factor - 1.5 * number, 1))
+
         candidates.append(ZoneCandidate(
             id=f"pfz_{number}",
             name=f"PFZ near {item.coastal_reference}",
             location=target,
             distance_km=round(distance, 1),
-            pfz_score=92,
-            chlorophyll_score=55,
-            sst_score=55,
-            ocean_context_score=60,
+            pfz_score=pfz_dynamic,
+            chlorophyll_score=chl_dynamic,
+            sst_score=sst_dynamic,
+            ocean_context_score=ocean_ctx_dynamic,
             wave_safety=_score(wave, 0.8, vessel.max_wave_m),
             wind_safety=_score(wind, 5.0, vessel.max_wind_ms),
             swell_safety=_score(swell, 0.7, 1.5),
@@ -309,16 +526,17 @@ def analyse(
     ranked = rank_zones(candidates)
     top = ranked[0]
     alt = ranked[1] if len(ranked) > 1 else None
+    worst = ranked[-1] if ranked else None
     intent = detect_intent(message)
 
     # Calculate safe A* navigation route to recommended zone
-    route_info = plan_safe_route(location, top.location, vessel_speed_kmh=vessel.cruising_speed_kmh)
+    route_info = plan_safe_route(effective_location, top.location, vessel_speed_kmh=vessel.cruising_speed_kmh)
 
     trace = [
-        f"Planner: parsed intent '{intent}' for coordinate ({location.lat:.2f}°N, {location.lon:.2f}°E) with vessel '{vessel.name}'.",
-        f"PFZ agent: loaded validated PFZ advisory ({len(pfz)} candidate zones along Maharashtra/Konkan coast).",
+        f"Planner: parsed intent '{intent}' for reference '{origin_name}' ({effective_location.lat:.2f}°N, {effective_location.lon:.2f}°E) with vessel '{vessel.name}'.",
+        f"PFZ agent: loaded validated PFZ advisory ({len(pfz)} candidate zones along Maharashtra/Konkan/Goa coast).",
         f"Marine data agent: retrieved {source_mode.value} conditions (wave: {wave:.1f} m, wind: {wind:.1f} m/s, swell: {swell:.1f} m).",
-        f"GIS agent: calculated geodesic distances and evaluated proximity to CZMP coastal boundaries.",
+        f"GIS agent: calculated geodesic distances from {origin_name} and evaluated proximity to CZMP boundaries.",
         f"Route engine: computed {route_info['distance_km']} km safe A* route ({route_info['estimated_duration_hours']} hrs cruising).",
         f"Risk engine: compared wave height ({wave:.1f} m) with vessel limit ({vessel.max_wave_m} m) -> {'BLOCKED (HIGH RISK)' if critical else 'SAFE TO DEPART'}.",
         f"Recommendation agent: synthesized {intent} decision with typed evidence ledger.",
@@ -343,6 +561,12 @@ def analyse(
         "reason": f"Wave height ({wave:.1f} m) exceeds configured {vessel.name} limit ({vessel.max_wave_m} m)." if critical else f"Sea conditions are within safe limits for {vessel.name}.",
     }
 
+    origin_dict = {
+        "lat": effective_location.lat,
+        "lon": effective_location.lon,
+        "name": origin_name,
+    }
+
     # Attempt Gemini neural synthesis; fallback to deterministic rules
     final_answer = generate_marine_synthesis(
         user_query=message,
@@ -352,21 +576,42 @@ def analyse(
         safety_assessment=safety_dict,
         top_candidate=top.model_dump(mode="json"),
         alternative_candidates=[item.model_dump(mode="json") for item in ranked[1:]],
+        worst_candidate=worst.model_dump(mode="json") if worst else None,
+        origin_location=origin_dict,
         route_info=route_info,
+        api_key=api_key,
     )
 
+    ai_provider = "GEMINI NEURAL AGENT"
     if final_answer:
-        trace.append("Gemini agent: generated grounded conversational neural synthesis.")
+        trace.append("Gemini agent: generated grounded conversational neural synthesis addressing specific user query.")
     else:
-        final_answer = _answer(language, intent, critical, top, alt, wave, wind, swell, vessel.name, vessel.max_wave_m)
+        ai_provider = "DETERMINISTIC GIS AGENT"
+        final_answer = _answer(
+            language,
+            intent,
+            critical,
+            top,
+            alt,
+            worst,
+            wave,
+            wind,
+            swell,
+            vessel.name,
+            vessel.max_wave_m,
+            origin_name=origin_name,
+        )
 
     return {
         "answer": final_answer,
         "intent": intent,
         "language": language,
         "source_mode": source_mode.value,
+        "ai_provider": ai_provider,
+        "origin": origin_dict,
         "recommendation": top.model_dump(mode="json"),
         "alternatives": [item.model_dump(mode="json") for item in ranked[1:]],
+        "worst_zone": worst.model_dump(mode="json") if worst else None,
         "evidence": [item.model_dump(mode="json") for item in evidence],
         "trace": trace,
         "vessel_profile": vessel_dict,

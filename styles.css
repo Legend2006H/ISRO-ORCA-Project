@@ -777,9 +777,38 @@ input:checked + .slider:before {
   border-radius: 4px;
 }
 .decision-narrative {
-  font-size: 13px;
-  line-height: 1.6;
-  color: #d1e5e3;
+  font-size: 13.5px;
+  line-height: 1.65;
+  color: #e2f1ef;
+}
+.decision-narrative strong {
+  color: var(--cyan);
+  font-weight: 700;
+}
+.ai-bullet-row {
+  margin: 6px 0;
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+.ai-bullet-badge {
+  color: var(--cyan);
+  font-size: 14px;
+}
+.ai-bullet-title {
+  color: #fff;
+  font-weight: 700;
+}
+
+.speaking-active {
+  background: rgba(0, 245, 212, 0.25) !important;
+  border-color: var(--cyan) !important;
+  color: #00f5d4 !important;
+  animation: pulseSpeaking 1.5s infinite alternate ease-in-out;
+}
+@keyframes pulseSpeaking {
+  0% { box-shadow: 0 0 5px rgba(0, 245, 212, 0.3); }
+  100% { box-shadow: 0 0 16px rgba(0, 245, 212, 0.8); }
 }
 
 /* Score Breakdown Grid */
@@ -960,6 +989,13 @@ input:checked + .slider:before {
   border: 1px solid var(--glass-border);
   margin: 16px 0;
   background: #020b0e !important;
+  transform: translateZ(0);
+  will-change: transform;
+  contain: layout paint;
+}
+.leaflet-cyber-container .leaflet-tile {
+  image-rendering: -webkit-optimize-contrast;
+  image-rendering: crisp-edges;
 }
 
 /* Route HUD Banner */
@@ -1224,4 +1260,94 @@ input:checked + .slider:before {
   .map-legend-pills {
     display: none;
   }
+}
+
+/* AI Key Modal & HUD Button */
+.apikey-hud-btn {
+  background: rgba(142, 117, 178, 0.15) !important;
+  border-color: rgba(142, 117, 178, 0.4) !important;
+  color: #c4b5fd !important;
+}
+.apikey-hud-btn:hover {
+  background: rgba(142, 117, 178, 0.25) !important;
+  border-color: #a78bfa !important;
+}
+.apikey-hud-btn.active-key {
+  border-color: var(--emerald) !important;
+  color: var(--emerald) !important;
+  background: rgba(16, 185, 129, 0.15) !important;
+}
+
+.cyber-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(2, 6, 23, 0.75);
+  backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  padding: 16px;
+}
+.cyber-modal-card {
+  background: rgba(10, 25, 40, 0.95);
+  border: 1px solid rgba(0, 245, 212, 0.3);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.8), 0 0 30px rgba(0, 245, 212, 0.2);
+  border-radius: 16px;
+  max-width: 480px;
+  width: 100%;
+  padding: 24px;
+  color: #f8fafc;
+}
+.cyber-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+.cyber-modal-header h3 {
+  margin: 6px 0 0;
+  font-size: 1.25rem;
+  font-family: 'Space Grotesk', sans-serif;
+  color: #fff;
+}
+.modal-close-btn {
+  background: transparent;
+  border: none;
+  color: #94a3b8;
+  font-size: 1.5rem;
+  cursor: pointer;
+  padding: 4px 8px;
+  transition: color 0.2s;
+}
+.modal-close-btn:hover {
+  color: #fff;
+}
+.modal-desc {
+  font-size: 0.88rem;
+  color: #94a3b8;
+  line-height: 1.5;
+  margin-bottom: 16px;
+}
+.modal-input-group input {
+  width: 100%;
+  box-sizing: border-box;
+  background: rgba(15, 23, 42, 0.8);
+  border: 1px solid rgba(148, 163, 184, 0.25);
+  border-radius: 10px;
+  padding: 12px 14px;
+  color: #fff;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.88rem;
+  outline: none;
+  transition: border-color 0.2s;
+}
+.modal-input-group input:focus {
+  border-color: var(--cyan);
+}
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 20px;
 }

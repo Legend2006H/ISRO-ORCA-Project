@@ -13,6 +13,7 @@ class SourceMode(str, Enum):
 class Location(BaseModel):
     lat: float = Field(ge=-90, le=90)
     lon: float = Field(ge=-180, le=180)
+    name: str | None = None
 
 
 class VesselType(str, Enum):
@@ -69,6 +70,7 @@ class ChatRequest(BaseModel):
     session_id: str | None = None
     vessel_type: str = "small_boat"
     use_live_data: bool = False
+    api_key: str | None = None
 
 
 class RouteRequest(BaseModel):
