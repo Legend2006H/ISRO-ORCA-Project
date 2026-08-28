@@ -48,8 +48,8 @@ function offlineFallback(message) {
     evidence_ids: evidenceIds,
   });
   const lang = document.getElementById("language") ? document.getElementById("language").value : "en";
-  const top = candidate("pfz_1", "PFZ near Navgaon", 45.2, 57.1, 72.2, 39.3, 54.8);
-  const alt = candidate("pfz_2", "PFZ near Sasawane", 45.8, 56.8, 72.2, 39.3, 54.2);
+  const top = candidate("pfz_1", "PFZ near Navgaon", 45.2, 58.4, 88.3, 39.3, 54.8);
+  const alt = candidate("pfz_2", "PFZ near Sasawane", 45.8, 57.9, 88.6, 39.3, 54.2);
 
   const responses = {
     comparison: {
@@ -68,9 +68,9 @@ function offlineFallback(message) {
       mr: `समुद्रस्थिती मूल्यांकन: उच्च धोका — प्रस्थान करू नका. लाटांची उंची 2.2 मीटर (मर्यादा: 1.5 मी) आणि वाऱ्याचा वेग 8.0 मी/से आहे.`
     },
     recommendation: {
-      en: `Top candidate fishing zone is ${top.name} (${top.distance_km} km away, composite score: 57/100, fishing yield: 72/100). Critical note: Departure is blocked for small craft due to 2.2 m sea-state.`,
-      hi: `शीर्ष अनुशंसित मत्स्य पालन क्षेत्र ${top.name} है (${top.distance_km} किमी दूर, स्कोर: 57/100)। चेतावनी: 2.2 मीटर लहरों के कारण प्रस्थान प्रतिबंधित है।`,
-      mr: `सर्वोत्तम शिफारस केलेला मासेमारी झोन ${top.name} आहे (${top.distance_km} किमी दूर, स्कोर: 57/100). इशारा: 2.2 मीटर लाटांमुळे प्रस्थान प्रतिबंधित आहे.`
+      en: `Top candidate fishing zone is ${top.name} (${top.distance_km} km away, composite score: 58/100, fishing yield: ${top.fishing_score.toFixed(0)}/100). Critical note: Departure is blocked for small craft due to 2.2 m sea-state.`,
+      hi: `शीर्ष अनुशंसित मत्स्य पालन क्षेत्र ${top.name} है (${top.distance_km} किमी दूर, मत्स्य क्षमता: ${top.fishing_score.toFixed(0)}/100)। चेतावनी: 2.2 मीटर लहरों के कारण प्रस्थान प्रतिबंधित है।`,
+      mr: `सर्वोत्तम शिफारस केलेला मासेमारी झोन ${top.name} आहे (${top.distance_km} किमी दूर, मासेमारी क्षमता: ${top.fishing_score.toFixed(0)}/100). इशारा: 2.2 मीटर लाटांमुळे प्रस्थान प्रतिबंधित आहे.`
     }
   };
 
@@ -85,8 +85,8 @@ function offlineFallback(message) {
     recommendation: top,
     alternatives: [
       alt,
-      candidate("pfz_3", "PFZ near Alibaug", 48.1, 55.4, 72.2, 39.3, 51.9),
-      candidate("pfz_4", "PFZ near Thal", 49.5, 54.7, 72.2, 39.3, 50.5),
+      candidate("pfz_3", "PFZ near Alibaug", 48.1, 56.5, 88.1, 39.3, 51.9),
+      candidate("pfz_4", "PFZ near Thal", 49.5, 55.8, 88.2, 39.3, 50.5),
     ],
     route: {
       distance_km: 53.4,
@@ -209,11 +209,14 @@ async function loadAllPfzMarkers() {
       });
 
       marker.bindPopup(`
-        <strong style="color:#ffb703">🐟 ${p.name}</strong>
-        <p><b>Distance Band:</b> ${p.distance_band}</p>
-        <p><b>Depth Band:</b> ${p.depth_band}</p>
-        <p><b>Compass Bearing:</b> ${p.bearing_deg}°</p>
-        <p><b>Validity:</b> ${p.validity}</p>
+        <div style="font-family: inherit; font-size: 13px; line-height: 1.4; min-width: 180px;">
+          <strong style="color:#ffb703; font-size: 14px;">🐟 ${p.name}</strong>
+          <p style="margin: 4px 0;"><b>Distance Band:</b> ${p.distance_band}</p>
+          <p style="margin: 4px 0;"><b>Depth Band:</b> ${p.depth_band}</p>
+          <p style="margin: 4px 0;"><b>Compass Bearing:</b> ${p.bearing_deg}°</p>
+          <p style="margin: 4px 0; color: #8da9a7; font-size: 11px;"><b>Validity:</b> ${p.validity}</p>
+          <button onclick="window.selectPfzZone(${lat}, ${lon}, '${p.name.replace(/'/g, "\\'")}')" style="margin-top: 8px; width: 100%; background: linear-gradient(135deg, #00f5d4, #00b4d8); color: #021017; font-weight: 700; border: none; padding: 6px 10px; border-radius: 6px; cursor: pointer; font-size: 12px;">🎯 Set Route & Analyze Zone</button>
+        </div>
       `);
 
       pfzLayerGroup.addLayer(marker);
@@ -222,6 +225,14 @@ async function loadAllPfzMarkers() {
     console.debug("PFZ GeoJSON load skipped:", err);
   }
 }
+
+window.selectPfzZone = function(lat, lon, name) {
+  const queryEl = document.getElementById("query");
+  if (queryEl) {
+    queryEl.value = `Analyze navigation route, fishing potential, and safety conditions to ${name}`;
+  }
+  analyse();
+};
 
 async function loadBoundaryOverlays() {
   if (!leafletMap || !boundaryLayerGroup) return;

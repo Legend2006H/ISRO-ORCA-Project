@@ -19,7 +19,7 @@ This document outlines the current state of the ORCA Marine Intelligence Project
 ### 2. Backend Orchestration (FastAPI)
 - **Data Ingestion**: Parsers for reading `.xls` PFZ data (`pfz_import.py`) and `.csv` boundary geofences (`boundary_import.py`).
 - **Live Marine Engine**: A service (`live_marine.py`, `incois_osf.py`) that checks safety clearances based on vessel types and real-time/simulated wave heights and wind speeds.
-- **Scoring System**: A deterministic scoring engine (`scoring.py`) that ranks fishing zones based on fishing potential, safety, and accessibility.
+- **Dynamic Scoring System**: A multi-factor scoring engine (`scoring.py`, `offline_service.py`) that dynamically calculates Potential Fishing Zone (PFZ) yields and sub-scores (PFZ satellite advisory clarity, Chlorophyll-a upwelling index, Sea Surface Temperature thermal fronts, and ocean dynamic convergence) based on live/cached ocean observations and candidate bathymetry.
 - **Routing**: Implementation of A* shortest path routing (`routing.py`) to calculate safe navigation corridors while avoiding restricted zones.
 - **Agent Fallback System**: The `offline_service.py` manages the deterministic calculation pipeline and acts as a cached-data decision service if live fetching fails.
 
