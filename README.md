@@ -93,13 +93,24 @@ flowchart TD
 
 You can set this up on your local machine in just a few minutes! 💻
 
-### 1️⃣ Clone the Repo
+### ⚡ Option A: Quick Start (Windows One-Click)
+Double-click [`run.bat`](./run.bat) or run it in your terminal:
+```cmd
+.\run.bat
+```
+*(This automatically verifies Python, creates `venv`, installs missing dependencies, opens `http://127.0.0.1:8000/` in your browser, and launches Uvicorn!)*
+
+---
+
+### 🛠️ Option B: Manual Setup
+
+#### 1️⃣ Clone the Repo
 ```bash
 git clone https://github.com/Legend2006H/ISRO-ORCA-Project.git
 cd ISRO-ORCA-Project
 ```
 
-### 2️⃣ Set Up a Virtual Environment
+#### 2️⃣ Set Up a Virtual Environment
 ```bash
 # On Windows (PowerShell):
 python -m venv venv
@@ -110,24 +121,24 @@ python3 -m venv venv
 source venv/bin/activate
 ```
 
-### 3️⃣ Install Required Packages
+#### 3️⃣ Install Required Packages
 ```bash
 pip install -r requirements.txt
 ```
 
-### 4️⃣ Set Up Environment Variables (Optional)
+#### 4️⃣ Set Up Environment Variables (Optional)
 ```bash
 cp .env.example .env
 # You can add your GEMINI_API_KEY in .env if you want dynamic Gemini AI responses!
 # (If no key is added, ORCA automatically uses its smart offline rule-engine fallback)
 ```
 
-### 5️⃣ Run the Server
+#### 5️⃣ Run the Server
 ```bash
 uvicorn api.main:app --reload
 ```
 
-### 6️⃣ Open in Browser! 🎉
+#### 6️⃣ Open in Browser! 🎉
 Navigate to **`http://127.0.0.1:8000`** in your browser to see the live dashboard!
 
 ---
