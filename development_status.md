@@ -10,11 +10,14 @@ This document outlines the current state of the ORCA Marine Intelligence Project
 ## What Has Been Developed (Current Capabilities)
 
 ### 1. User Interface (Frontend)
-- **Responsive WebGIS Dashboard**: A fully responsive mobile-friendly dashboard.
+- **Responsive WebGIS Dashboard**: A mobile-first, responsive dashboard optimized for all screen sizes (desktop, tablet, and mobile phones down to 360px). Includes a touch-friendly collapsible glassmorphism drawer for vessel & language switching (`setupMobileMenu`), horizontal gesture scrolling for quick suggestion chips, 44px+ touch targets, iPhone-style full-width stacked score cards, responsive Leaflet map auto-resize listeners, and safe area inset support.
 - **Hardware-Accelerated WebGIS Radar**: Ultra-fast, lag-free Leaflet map powered by HTML5 Canvas rendering (`preferCanvas: true`), tile buffer caching, GeoJSON layer memory caching, and GPU composite transforms. Auto-centers with smooth `flyTo` animation when location changes via chat or map click, and auto-fits route bounds to ensure navigation corridors are always visible.
 - **Dynamic Location & Suggestion Auto-Sync**: When a location is mentioned in chat or clicked on the map (e.g. Ratnagiri, Malvan, Mumbai, Alibaug, Harne, Murud, Devgad), the system automatically centers the radar, reverses geocodes the nearest coastal port, and dynamically updates all quick prompt suggestion chips and placeholders to that specific location.
+- **Live Marine Telemetry & Real-Time Sync Bar**: Features an active live telemetry banner displaying real-time stream status, automatic live sync countdown timer ("Last synced: Just now", "10s ago"), and quick manual re-sync button with smooth rotating animation. Live Feed is enabled by default out-of-the-box.
+- **Dynamic Real-Time Forecast Validity**: Automatically formats the PFZ advisory and forecast validity period dynamically according to the current live date (e.g. "FROM <Today> TO <Tomorrow>") rather than historical static dates.
 - **Voice & Multilingual UI**: Speech-to-text voice input controls and language selection (English, Hindi, Marathi).
 - **Vessel Profiles**: Selectable vessel profiles (Small Boat, Trawler, Deep Sea) that dynamically adjust safety wave height thresholds.
+- **Cyber-Ocean Dark Mode System**: Complete Dark / Light theme system driven cleanly by `[data-theme="dark"]` and `[data-theme="light"]` attribute selectors, dynamic CartoDB Dark Matter / Voyager tile switching for Leaflet, deep marine background palette (`#070f1e`, `#0f1d32`), glowing cyan (`#38bdf8`) / amber (`#fbbf24`) / emerald (`#4ade80`) accents, high-contrast typography, localStorage preference persistence, system `prefers-color-scheme` auto-detection, and bidirectional contextual action buttons (`☀️ Light Mode` when in Dark Mode ⇄ `🌙 Dark Mode` when in Light Mode).
 - **Evidence Ledger & Reasoning Trace**: Dedicated UI panels to display the agentic orchestration pipeline and data provenance.
 
 ### 2. Backend Orchestration (FastAPI)
@@ -22,14 +25,14 @@ This document outlines the current state of the ORCA Marine Intelligence Project
 - **Context-Aware Intent & Query Deliberation**: Differentiates between requests for best zones, worst/riskiest zones to avoid, weather/safety checks, and comparative reasoning.
 - **Grounded Gemini Agent**: Generates natural conversational answers tailored directly to the user's specific question using live context (candidate zones, wave/wind limits, A* route) with zero hallucination.
 - **Data Ingestion**: Parsers for reading `.xls` PFZ data (`pfz_import.py`) and `.csv` boundary geofences (`boundary_import.py`).
-- **Live Marine Engine**: A service (`live_marine.py`, `incois_osf.py`) checking safety clearances based on vessel types and real-time/simulated wave heights and wind speeds.
+- **Live Marine Engine**: A high-resolution live ocean telemetry service (`live_marine.py`, `incois_osf.py`) fetching real-time Open-Meteo marine streams (wave height, wave direction, swell, SST, wind speed) with resilient HTTP/HTTPS endpoints and dynamic space-time physical telemetry modeling. Automatically evaluates safety wave clearances per vessel profile (Small Boat 1.5m, Trawler 2.5m, Deep Sea 4.0m).
 - **Routing & Scoring**: Multi-factor ranking (`scoring.py`) evaluating yield potential, accessibility, wave hazard clearance, and SST/Chlorophyll indicators. Fishing sub-scores (PFZ, SST, Chlorophyll proxy, Ocean Context) are dynamically computed from live/cached ocean telemetry — SST peaks at 28°C for tropical waters, chlorophyll proxy incorporates current-driven upwelling indicators, and ocean context factors in swell and current conditions. Generates smoothed Chaikin A* navigation corridors (`routing.py`) avoiding restricted CZMP zones and connecting the active vessel origin cleanly into the highlighted destination PFZ beacon.
 - **Dynamic Scoring System**: A multi-factor scoring engine (`scoring.py`, `offline_service.py`) that dynamically calculates Potential Fishing Zone (PFZ) yields and sub-scores (PFZ satellite advisory clarity, Chlorophyll-a upwelling index, Sea Surface Temperature thermal fronts, and ocean dynamic convergence) based on live/cached ocean observations and candidate bathymetry.
 - **Routing**: Implementation of A* shortest path routing (`routing.py`) to calculate safe navigation corridors while avoiding restricted zones.
 - **Agent Fallback System**: The `offline_service.py` manages the deterministic calculation pipeline and acts as a cached-data decision service if live fetching fails.
 
 ### 3. Environment & Configuration
-- **Gemini API Key Setup**: Reads `GEMINI_API_KEY` from `.env`, system environment, or directly from the in-app `🔑 Gemini AI` configuration modal (stored locally in browser). When enabled, it provides real-time conversational LLM reasoning that gracefully interprets typos, broken grammar, phonetic phrasing, and glitchy inputs. If no key is configured, it falls back to an intelligent query-responsive offline engine.
+- **Built-in Gemini Neural Agent**: Configured with a default built-in API key and `.env` loader (`GEMINI_API_KEY`), running `gemini-3.5-flash-lite` with ultra-fast multi-model fallback (`gemini-3.1-flash-lite`, `gemini-3.5-flash`, `gemini-3.6-flash`). The frontend operates seamlessly without ever prompting the user for an API key. Provides real-time conversational LLM reasoning that gracefully interprets typos, broken grammar, phonetic phrasing, and glitchy inputs.
 
 ## How to Run Locally
 

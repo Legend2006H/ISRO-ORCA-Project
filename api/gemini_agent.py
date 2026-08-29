@@ -30,13 +30,19 @@ def load_env_file():
 load_env_file()
 
 
-def get_gemini_api_key(passed_key: str | None = None) -> str | None:
-    """Retrieve active Gemini API key from parameters, env, or .env file."""
+DEFAULT_GEMINI_KEY = "AQ.Ab8RN6IFPTGbyD5GOIwhy-rukk-ZiU8FK3jpQEhRLpdZY53-AA"
+
+
+def get_gemini_api_key(passed_key: str | None = None) -> str:
+    """Retrieve active Gemini API key from parameters, env, .env file, or built-in default."""
     load_env_file()
-    key = (passed_key or os.getenv("GEMINI_API_KEY", "")).strip()
-    if not key or "YOUR_KEY" in key or key == "YOUR_GEMINI_API_KEY":
-        return None
-    return key
+    candidate = (passed_key or "").strip()
+    if candidate and not ("YOUR_KEY" in candidate or candidate == "YOUR_GEMINI_API_KEY"):
+        return candidate
+    env_key = os.getenv("GEMINI_API_KEY", "").strip()
+    if env_key and not ("YOUR_KEY" in env_key or env_key == "YOUR_GEMINI_API_KEY"):
+        return env_key
+    return DEFAULT_GEMINI_KEY
 
 
 def generate_marine_synthesis(
@@ -53,21 +59,19 @@ def generate_marine_synthesis(
     api_key: str | None = None,
 ) -> str | None:
     """Call Google Gemini LLM to generate natural, grounded, conversational, and typo-tolerant marine intelligence."""
-    key = get_gemini_api_key(api_key)
-    if not key:
-        return None
+    primary_key = get_gemini_api_key(api_key)
 
     lang_names = {"en": "English", "hi": "Hindi", "mr": "Marathi"}
     lang_name = lang_names.get(language, "English")
 
     models_to_try = [
-        os.getenv("GEMINI_MODEL", "gemini-2.5-flash"),
-        "gemini-2.5-flash",
+        os.getenv("GEMINI_MODEL", "gemini-3.5-flash-lite"),
         "gemini-3.5-flash-lite",
-        "gemini-3.7-flash",
-        "gemini-3.1-pro-preview",
+        "gemini-3.1-flash-lite",
+        "gemini-3.5-flash",
+        "gemini-3.6-flash",
     ]
-    seen_models = set()
+    seen_models: set = set()
     models = [m for m in models_to_try if m and not (m in seen_models or seen_models.add(m))]
 
     origin_desc = "Maharashtra Coast"
@@ -115,35 +119,40 @@ def generate_marine_synthesis(
             }
         ],
         "generationConfig": {
-            "temperature": 0.35,
-            "maxOutputTokens": 800,
+            "temperature": 0.3,
+            "maxOutputTokens": 600,
         },
     }
 
-    for model_name in models:
-        endpoint = f"https://generativelanguage.googleapis.com/v1beta/models/{model_name}:generateContent?key={key}"
-        try:
-            req = urllib.request.Request(
-                endpoint,
-                data=json.dumps(payload).encode("utf-8"),
-                headers={"Content-Type": "application/json"},
-                method="POST",
-            )
-            with urllib.request.urlopen(req, timeout=9) as resp:
-                resp_data = json.loads(resp.read().decode("utf-8"))
-                candidates = resp_data.get("candidates", [])
-                if candidates:
-                    parts = candidates[0].get("content", {}).get("parts", [])
-                    if parts and "text" in parts[0]:
-                        answer_text = parts[0]["text"].strip()
-                        if answer_text:
-                            return answer_text
-        except urllib.error.HTTPError as err:
-            err_body = err.read().decode("utf-8", errors="ignore")
-            print(f"Gemini API ({model_name}) HTTP Error {err.code}: {err_body}")
-            continue
-        except Exception as exc:
-            print(f"Gemini API ({model_name}) error: {exc}")
-            continue
+    keys_to_try = [primary_key]
+    if primary_key != DEFAULT_GEMINI_KEY:
+        keys_to_try.append(DEFAULT_GEMINI_KEY)
+
+    for active_key in keys_to_try:
+        for model_name in models:
+            endpoint = f"https://generativelanguage.googleapis.com/v1beta/models/{model_name}:generateContent?key={active_key}"
+            try:
+                req = urllib.request.Request(
+                    endpoint,
+                    data=json.dumps(payload).encode("utf-8"),
+                    headers={"Content-Type": "application/json"},
+                    method="POST",
+                )
+                with urllib.request.urlopen(req, timeout=12) as resp:
+                    resp_data = json.loads(resp.read().decode("utf-8"))
+                    candidates = resp_data.get("candidates", [])
+                    if candidates:
+                        parts = candidates[0].get("content", {}).get("parts", [])
+                        if parts and "text" in parts[0]:
+                            answer_text = parts[0]["text"].strip()
+                            if answer_text:
+                                return answer_text
+            except urllib.error.HTTPError as err:
+                err_body = err.read().decode("utf-8", errors="ignore")
+                print(f"Gemini API ({model_name}) HTTP Error {err.code}: {err_body}")
+                continue
+            except Exception as exc:
+                print(f"Gemini API ({model_name}) error: {exc}")
+                continue
 
     return None

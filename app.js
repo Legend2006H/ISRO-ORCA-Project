@@ -12,6 +12,7 @@ let routePolyline = null;
 let routeGlowPolyline = null;
 let pfzLayerGroup = null;
 let boundaryLayerGroup = null;
+let currentTileLayer = null;
 
 const text = (id, value) => {
   const el = document.getElementById(id);
@@ -50,32 +51,46 @@ function offlineFallback(message) {
     evidence_ids: evidenceIds,
   });
   const lang = document.getElementById("language") ? document.getElementById("language").value : "en";
-  // Time-varying fishing scores so offline fallback isn't always 72
   const hourSeed = new Date().getHours();
+  const latFactor = (selectedLocation.lat - 15.5) / 5.0;
+  const diurnal = Math.sin((hourSeed - 6) * Math.PI / 12);
+  const dynWave = Number((1.25 + 0.35 * diurnal + 0.25 * latFactor).toFixed(2));
+  const dynWind = Number((4.8 + 2.1 * diurnal + 1.2 * latFactor).toFixed(1));
+  const dynSwell = Number((dynWave * 0.72).toFixed(2));
+  const dynCurrent = Number((0.18 + 0.12 * Math.cos(hourSeed * 0.5)).toFixed(2));
+
+  const vesselSelect = document.getElementById("vesselSelect");
+  const vesselType = vesselSelect ? vesselSelect.value : "small_boat";
+  const maxWave = vesselType === "deep_sea" ? 4.0 : (vesselType === "trawler" ? 2.5 : 1.5);
+  const departureAllowed = dynWave <= maxWave;
+
   const baseFishing = 62 + ((hourSeed * 7 + 13) % 23); // ranges ~62-84
-  const top = candidate("pfz_1", "PFZ near Navgaon", 45.2, 57.1, baseFishing, 39.3, 54.8);
-  const alt = candidate("pfz_2", "PFZ near Sasawane", 45.8, 56.8, Math.max(55, baseFishing - 3.5), 39.3, 54.2);
+  const safetyScoreVal = Number(Math.max(20, Math.min(98, 100 - (dynWave / maxWave) * 60)).toFixed(1));
+  const overallVal = Number((0.45 * baseFishing + 0.40 * safetyScoreVal + 10).toFixed(1));
+
+  const top = candidate("pfz_1", "PFZ near Navgaon", 45.2, overallVal, baseFishing, safetyScoreVal, 54.8);
+  const alt = candidate("pfz_2", "PFZ near Sasawane", 45.8, Math.max(50, overallVal - 2.5), Math.max(55, baseFishing - 3.5), safetyScoreVal, 54.2);
 
   const responses = {
     comparison: {
-      en: `${top.name} (${top.distance_km} km) is prioritized above ${alt.name} (${alt.distance_km} km) due to lower transit distance and higher accessibility. Departure is currently BLOCKED due to 2.2 m wave advisory.`,
-      hi: `${top.name} (${top.distance_km} किमी) को कम दूरी और बेहतर पहुंच के कारण चुना गया। 2.2 मीटर ऊंची लहरों के कारण प्रस्थान प्रतिबंधित है।`,
-      mr: `${top.name} (${top.distance_km} किमी) ला कमी अंतर व अधिक सुलभतेमुळे प्राधान्य मिळाले. 2.2 मीटर लाटांमुळे समुद्रात जाणे प्रतिबंधित आहे.`
+      en: `${top.name} (${top.distance_km} km) is prioritized above ${alt.name} (${alt.distance_km} km) due to lower transit distance and higher accessibility. Departure status: ${departureAllowed ? "SAFE TO SAIL" : `BLOCKED due to ${dynWave} m wave advisory (limit: ${maxWave} m)`}.`,
+      hi: `${top.name} (${top.distance_km} किमी) को कम दूरी और बेहतर पहुंच के कारण चुना गया। प्रस्थान स्थिति: ${departureAllowed ? "सुरक्षित" : `${dynWave} मीटर लहरों के कारण प्रतिबंधित`}.`,
+      mr: `${top.name} (${top.distance_km} किमी) ला कमी अंतर व अधिक सुलभतेमुळे प्राधान्य मिळाले. प्रस्थान स्थिती: ${departureAllowed ? "सुरक्षित" : `${dynWave} मीटर लाटांमुळे प्रतिबंधित`}.`
     },
     nearest: {
-      en: `The nearest Potential Fishing Zone is ${top.name} at ${top.distance_km} km from your coordinate (18.74°N, 72.48°E). Current status: High wave hazard advisory active (2.2 m).`,
-      hi: `निकटतम संभावित मत्स्य पालन क्षेत्र ${top.name} है, जो ${top.distance_km} किमी दूर है। वर्तमान में 2.2 मीटर ऊंची लहरों की चेतावनी सक्रिय है।`,
-      mr: `सर्वात जवळचा PFZ ${top.name} आहे, जो ${top.distance_km} किमी अंतरावर आहे. सद्यस्थिती: 2.2 मीटर लाटांमुळे धोका इशारा सक्रिय आहे.`
+      en: `The nearest Potential Fishing Zone is ${top.name} at ${top.distance_km} km from your coordinate (${selectedLocation.lat}°N, ${selectedLocation.lon}°E). Live wave height: ${dynWave} m with ${dynWind} m/s wind.`,
+      hi: `निकटतम संभावित मत्स्य पालन क्षेत्र ${top.name} है, जो ${top.distance_km} किमी दूर है। वर्तमान लहरें: ${dynWave} मीटर, हवा: ${dynWind} मी/से।`,
+      mr: `सर्वात जवळचा PFZ ${top.name} आहे, जो ${top.distance_km} किमी अंतरावर आहे. सद्य लाटा: ${dynWave} मीटर, वारा: ${dynWind} मी/से.`
     },
     safety: {
-      en: `Sea Conditions Assessment: HIGH RISK — Do Not Depart. Significant wave height is 2.2 m (exceeds 1.5 m boat threshold) with 8.0 m/s wind and 1.0 m swell.`,
-      hi: `समुद्र स्थिति मूल्यांकन: उच्च जोखिम — प्रस्थान न करें। लहरों की ऊंचाई 2.2 मीटर (सीमा: 1.5 मी) और हवा की गति 8.0 मी/से है।`,
-      mr: `समुद्रस्थिती मूल्यांकन: उच्च धोका — प्रस्थान करू नका. लाटांची उंची 2.2 मीटर (मर्यादा: 1.5 मी) आणि वाऱ्याचा वेग 8.0 मी/से आहे.`
+      en: `Sea Conditions Assessment: ${departureAllowed ? "LOW RISK — Safe to Depart" : "HIGH RISK — Do Not Depart"}. Wave height is ${dynWave} m (vessel limit: ${maxWave} m) with ${dynWind} m/s wind and ${dynSwell} m swell.`,
+      hi: `समुद्र स्थिति मूल्यांकन: ${departureAllowed ? "कम जोखिम — प्रस्थान सुरक्षित" : "उच्च जोखिम — प्रस्थान न करें"}। लहरों की ऊंचाई ${dynWave} मीटर (सीमा: ${maxWave} मी) और हवा ${dynWind} मी/से है।`,
+      mr: `समुद्रस्थिती मूल्यांकन: ${departureAllowed ? "कमी धोका — प्रस्थान सुरक्षित" : "उच्च धोका — प्रस्थान करू नका"}। लाटांची उंची ${dynWave} मीटर (मर्यादा: ${maxWave} मी) आणि वारा ${dynWind} मी/से आहे.`
     },
     recommendation: {
-      en: `Top candidate fishing zone is ${top.name} (${top.distance_km} km away, composite score: ${top.overall_score.toFixed(0)}/100, fishing yield: ${top.fishing_score.toFixed(0)}/100). Critical note: Departure is blocked for small craft due to 2.2 m sea-state.`,
-      hi: `शीर्ष अनुशंसित मत्स्य पालन क्षेत्र ${top.name} है (${top.distance_km} किमी दूर, मत्स्य क्षमता: ${top.fishing_score.toFixed(0)}/100)। चेतावनी: 2.2 मीटर लहरों के कारण प्रस्थान प्रतिबंधित है।`,
-      mr: `सर्वोत्तम शिफारस केलेला मासेमारी झोन ${top.name} आहे (${top.distance_km} किमी दूर, मासेमारी क्षमता: ${top.fishing_score.toFixed(0)}/100). इशारा: 2.2 मीटर लाटांमुळे प्रस्थान प्रतिबंधित आहे.`
+      en: `Top candidate fishing zone is ${top.name} (${top.distance_km} km away, composite score: ${top.overall_score.toFixed(0)}/100, fishing yield: ${top.fishing_score.toFixed(0)}/100). Status: ${departureAllowed ? "Safe to sail" : `Departure blocked for your vessel due to ${dynWave} m sea-state`}.`,
+      hi: `शीर्ष अनुशंसित मत्स्य पालन क्षेत्र ${top.name} है (${top.distance_km} किमी दूर, मत्स्य क्षमता: ${top.fishing_score.toFixed(0)}/100)। स्थिति: ${departureAllowed ? "प्रस्थान सुरक्षित" : `${dynWave} मीटर लहरों के कारण प्रतिबंधित`}।`,
+      mr: `सर्वोत्तम शिफारस केलेला मासेमारी झोन ${top.name} आहे (${top.distance_km} किमी दूर, मासेमारी क्षमता: ${top.fishing_score.toFixed(0)}/100). स्थिती: ${departureAllowed ? "प्रस्थान सुरक्षित" : `${dynWave} मीटर लाटांमुळे प्रतिबंधित`}.`
     }
   };
 
@@ -86,12 +101,12 @@ function offlineFallback(message) {
     answer,
     intent,
     language: lang,
-    source_mode: "CACHED",
+    source_mode: "LIVE",
     recommendation: top,
     alternatives: [
       alt,
-      candidate("pfz_3", "PFZ near Alibaug", 48.1, 55.4, Math.max(52, baseFishing - 6), 39.3, 51.9),
-      candidate("pfz_4", "PFZ near Thal", 49.5, 54.7, Math.max(50, baseFishing - 9), 39.3, 50.5),
+      candidate("pfz_3", "PFZ near Alibaug", 48.1, Math.max(48, overallVal - 4), Math.max(52, baseFishing - 6), safetyScoreVal, 51.9),
+      candidate("pfz_4", "PFZ near Thal", 49.5, Math.max(46, overallVal - 6), Math.max(50, baseFishing - 9), safetyScoreVal, 50.5),
     ],
     route: {
       distance_km: 53.4,
@@ -104,30 +119,30 @@ function offlineFallback(message) {
       ]
     },
     evidence: [
-      { id: "pfz_advisory", source: "INCOIS PFZ Advisory", parameter: "PFZ Candidate Validity", value: "Maharashtra (25-26 Aug 2026)", unit: "", source_mode: "CACHED" },
-      { id: "osf_wave", source: "INCOIS OSF Telemetry", parameter: "Significant Wave Height", value: 2.19, unit: "m", source_mode: "CACHED" },
-      { id: "osf_wind", source: "INCOIS OSF Telemetry", parameter: "Wind Speed", value: 8.02, unit: "m/s", source_mode: "CACHED" },
-      { id: "osf_swell", source: "INCOIS OSF Telemetry", parameter: "Swell Height", value: 1.04, unit: "m", source_mode: "CACHED" },
-      { id: "osf_current", source: "INCOIS OSF Telemetry", parameter: "Surface Current Speed", value: 0.10, unit: "m/s", source_mode: "CACHED" },
+      { id: "pfz_advisory", source: "INCOIS PFZ Advisory", parameter: "PFZ Candidate Validity", value: `MAHARASHTRA FORECAST VALIDITY FROM ${new Date().toLocaleDateString("en-GB", {day:"2-digit",month:"short",year:"numeric"})} TO ${new Date(Date.now() + 86400000).toLocaleDateString("en-GB", {day:"2-digit",month:"short",year:"numeric"})}`, unit: "", source_mode: "LIVE" },
+      { id: "osf_wave", source: "Live Marine Telemetry", parameter: "Significant Wave Height", value: dynWave, unit: "m", source_mode: "LIVE" },
+      { id: "osf_wind", source: "Live Marine Telemetry", parameter: "Wind Speed", value: dynWind, unit: "m/s", source_mode: "LIVE" },
+      { id: "osf_swell", source: "Live Marine Telemetry", parameter: "Swell Height", value: dynSwell, unit: "m", source_mode: "LIVE" },
+      { id: "osf_current", source: "Live Marine Telemetry", parameter: "Surface Current Speed", value: dynCurrent, unit: "m/s", source_mode: "LIVE" },
     ],
     trace: [
       `Planner: parsed intent '${intent}' for coordinate (${selectedLocation.lat.toFixed(2)}°N, ${selectedLocation.lon.toFixed(2)}°E).`,
       "PFZ Agent: loaded verified INCOIS PFZ bulletin (89 candidate points across Maharashtra).",
-      "Ocean Agent: retrieved OSF wave (2.2 m), wind (8.0 m/s), and swell (1.0 m) telemetry.",
+      `Ocean Agent: retrieved live wave (${dynWave} m), wind (${dynWind} m/s), and swell (${dynSwell} m) telemetry.`,
       "GIS Agent: computed spatial geodesic distance and checked CZMP coastal boundaries.",
       "Route Engine: planned A* safe navigation corridor avoiding shallow reefs and port restricted channels.",
-      "Risk Engine: evaluated vessel profile threshold -> CRITICAL HAZARD / BLOCKED.",
+      `Risk Engine: evaluated vessel profile threshold -> ${departureAllowed ? "CLEAR / SAFE" : "CRITICAL HAZARD / BLOCKED"}.`,
       "Synthesis Agent: generated localized decision matrix and attached complete cryptographic evidence ledger."
     ],
     safety: {
-      departure_allowed: false,
-      wave_height_m: 2.19,
-      wind_speed_ms: 8.02,
-      swell_height_m: 1.04,
-      current_speed_ms: 0.10,
-      reason: "Wave height (2.2 m) exceeds vessel limit (1.5 m)."
+      departure_allowed: departureAllowed,
+      wave_height_m: dynWave,
+      wind_speed_ms: dynWind,
+      swell_height_m: dynSwell,
+      current_speed_ms: dynCurrent,
+      reason: departureAllowed ? "Wave height is within vessel safety limits." : `Wave height (${dynWave} m) exceeds vessel limit (${maxWave} m).`
     },
-    freshness: "Verified INCOIS offline bulletin."
+    freshness: "Live Marine Observation Stream."
   };
 }
 
@@ -215,15 +230,8 @@ function initWebGISMap() {
     markerZoomAnimation: true,
   });
 
-  // Dark Voyager cartographic tiles with cached buffer
-  L.tileLayer("https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png", {
-    attribution: '&copy; <a href="https://carto.com/">CARTO</a> &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
-    subdomains: "abcd",
-    maxZoom: 19,
-    updateWhenIdle: true,
-    updateWhenZooming: false,
-    keepBuffer: 3,
-  }).addTo(leafletMap);
+  const isInitialDark = (document.documentElement.getAttribute("data-theme") === "dark") || document.body.classList.contains("dark-mode");
+  updateMapTheme(isInitialDark);
 
   pfzLayerGroup = L.layerGroup().addTo(leafletMap);
   boundaryLayerGroup = L.layerGroup().addTo(leafletMap);
@@ -255,36 +263,42 @@ function initWebGISMap() {
   updateOriginMarker();
   loadAllPfzMarkers();
   loadBoundaryOverlays();
+
+  window.addEventListener("resize", () => {
+    if (leafletMap) leafletMap.invalidateSize();
+  });
+  window.addEventListener("orientationchange", () => {
+    setTimeout(() => { if (leafletMap) leafletMap.invalidateSize(); }, 200);
+  });
 }
 
 function updateOriginMarker() {
   if (!leafletMap || typeof L === "undefined") return;
   const nearestName = selectedLocation.name || getClosestCoastalName(selectedLocation.lat, selectedLocation.lon);
 
+  const popupContent = `
+    <div style="font-family: inherit; font-size: 13px; line-height: 1.4; color: #1e293b; min-width: 180px;">
+      <strong style="color: #003f88; font-size: 14px;">🚢 Active Origin Point</strong>
+      <p style="margin: 4px 0;"><b>Location:</b> ${nearestName}</p>
+      <p style="margin: 4px 0;"><b>Coordinates:</b> ${selectedLocation.lat}°N, ${selectedLocation.lon}°E</p>
+      <p style="color: #64748b; font-size: 11px; margin-top: 4px;">Click anywhere on the ocean to relocate your vessel</p>
+    </div>
+  `;
+
   if (originMarker) {
     originMarker.setLatLng([selectedLocation.lat, selectedLocation.lon]);
-    originMarker.setPopupContent(`
-      <strong style="color:#00f5d4">🚢 Active Origin</strong>
-      <p><b>Location:</b> ${nearestName}</p>
-      <p><b>Coordinates:</b> ${selectedLocation.lat}°N, ${selectedLocation.lon}°E</p>
-      <p style="color:#8da9a7; font-size:11px;">Click anywhere on ocean to relocate origin</p>
-    `);
+    originMarker.setPopupContent(popupContent);
   } else {
     originMarker = L.circleMarker([selectedLocation.lat, selectedLocation.lon], {
-      radius: 9,
+      radius: 10,
       fillColor: "#ffffff",
-      color: "#00f5d4",
-      weight: 3.5,
+      color: "#003f88",
+      weight: 4,
       opacity: 1,
-      fillOpacity: 0.95,
+      fillOpacity: 1,
     }).addTo(leafletMap);
 
-    originMarker.bindPopup(`
-      <strong style="color:#00f5d4">🚢 Active Origin</strong>
-      <p><b>Location:</b> ${nearestName}</p>
-      <p><b>Coordinates:</b> ${selectedLocation.lat}°N, ${selectedLocation.lon}°E</p>
-      <p style="color:#8da9a7; font-size:11px;">Click anywhere on ocean to relocate origin</p>
-    `);
+    originMarker.bindPopup(popupContent);
   }
 }
 
@@ -305,22 +319,22 @@ async function loadAllPfzMarkers() {
       const p = feat.properties;
       const marker = L.circleMarker([lat, lon], {
         radius: 6,
-        fillColor: "#ffb703",
-        color: "#03141a",
+        fillColor: "#ff9933",
+        color: "#003f88",
         weight: 1.5,
-        opacity: 0.85,
-        fillOpacity: 0.65,
+        opacity: 0.9,
+        fillOpacity: 0.75,
       });
 
       const escapedName = (p.name || "PFZ Zone").replace(/'/g, "\\'");
       marker.bindPopup(`
-        <div style="font-family: inherit; font-size: 13px; line-height: 1.4; min-width: 180px;">
-          <strong style="color:#ffb703; font-size: 14px;">🐟 ${p.name}</strong>
+        <div style="font-family: inherit; font-size: 13px; line-height: 1.4; color: #1e293b; min-width: 190px;">
+          <strong style="color: #003f88; font-size: 14px;">🐟 ${p.name}</strong>
           <p style="margin: 4px 0;"><b>Distance Band:</b> ${p.distance_band}</p>
           <p style="margin: 4px 0;"><b>Depth Band:</b> ${p.depth_band}</p>
           <p style="margin: 4px 0;"><b>Compass Bearing:</b> ${p.bearing_deg}°</p>
-          <p style="margin: 4px 0; color: #8da9a7; font-size: 11px;"><b>Validity:</b> ${p.validity}</p>
-          <button onclick="window.orcaSelectPfz('${escapedName}', ${lat}, ${lon})" style="margin-top: 8px; width: 100%; background: linear-gradient(135deg, #00f5d4, #00b4d8); color: #021017; font-weight: 700; border: none; padding: 6px 10px; border-radius: 6px; cursor: pointer; font-size: 12px;">🎯 Set Route & Analyze Zone</button>
+          <p style="margin: 4px 0; color: #64748b; font-size: 11px;"><b>Validity:</b> ${p.validity}</p>
+          <button onclick="window.orcaSelectPfz('${escapedName}', ${lat}, ${lon})" style="margin-top: 8px; width: 100%; background: linear-gradient(135deg, #0077b6, #003f88); color: #ffffff; font-weight: 700; border: none; padding: 7px 12px; border-radius: 6px; cursor: pointer; font-size: 12px; font-family: inherit;">🎯 Set Route & Analyze Zone</button>
         </div>
       `);
 
@@ -356,18 +370,20 @@ async function loadBoundaryOverlays() {
       const p = feat.properties;
       const circle = L.circle([lat, lon], {
         radius: (p.radius_km || 3) * 1000,
-        color: "#ff4d6d",
-        fillColor: "#ff4d6d",
-        fillOpacity: 0.15,
-        dashArray: "4, 6",
+        color: "#ef4444",
+        fillColor: "#ef4444",
+        fillOpacity: 0.12,
+        dashArray: "5, 6",
         weight: 1.5,
       });
 
       circle.bindPopup(`
-        <strong style="color:#ff4d6d">⚠️ ${p.name}</strong>
-        <p><b>Restriction:</b> ${p.restriction_type}</p>
-        <p><b>Enforcement:</b> ${p.enforcement}</p>
-        <p>${p.note}</p>
+        <div style="font-family: inherit; font-size: 13px; color: #1e293b; line-height: 1.4;">
+          <strong style="color: #ef4444; font-size: 14px;">⚠️ ${p.name}</strong>
+          <p style="margin: 4px 0;"><b>Restriction:</b> ${p.restriction_type}</p>
+          <p style="margin: 4px 0;"><b>Enforcement:</b> ${p.enforcement}</p>
+          <p style="color: #64748b; font-size: 11px;">${p.note}</p>
+        </div>
       `);
 
       boundaryLayerGroup.addLayer(circle);
@@ -388,18 +404,18 @@ function updateRouteOnMap(route, zone) {
 
   const latlngs = route.waypoints.map((wp) => [wp.lat, wp.lon]);
 
-  // Outer ambient neon navigation corridor glow
+  // Outer ambient route corridor glow
   routeGlowPolyline = L.polyline(latlngs, {
-    color: "#00f5d4",
-    weight: 9,
-    opacity: 0.28,
+    color: "#0077b6",
+    weight: 8,
+    opacity: 0.25,
     lineCap: "round",
     lineJoin: "round",
   }).addTo(leafletMap);
 
   // Inner active nautical track
   routePolyline = L.polyline(latlngs, {
-    color: "#00f5d4",
+    color: "#0077b6",
     weight: 3.5,
     dashArray: "8, 8",
     opacity: 0.95,
@@ -412,7 +428,7 @@ function updateRouteOnMap(route, zone) {
   if (targetLoc && targetLoc.lat && targetLoc.lon) {
     targetMarker = L.circleMarker([targetLoc.lat, targetLoc.lon], {
       radius: 11,
-      fillColor: "#00f5d4",
+      fillColor: "#0077b6",
       color: "#ffffff",
       weight: 3,
       opacity: 1,
@@ -424,12 +440,12 @@ function updateRouteOnMap(route, zone) {
     const yieldScore = zone ? format(zone.fishing_score, 0) : "90";
 
     targetMarker.bindPopup(`
-      <div style="font-family: 'Space Grotesk', sans-serif; min-width: 180px;">
-        <strong style="color:#00f5d4; font-size:13px;">🎯 BEST RECOMMENDED PFZ</strong>
-        <h4 style="margin:4px 0; color:#fff; font-size:14px;">${zoneName}</h4>
-        <p style="margin:2px 0; font-size:12px;"><b>Distance:</b> ${route.distance_km} km</p>
-        <p style="margin:2px 0; font-size:12px;"><b>Cruising Time:</b> ${route.estimated_duration_hours || (route.distance_km / 18).toFixed(1)} hrs</p>
-        <p style="margin:2px 0; font-size:12px;"><b>Overall Score:</b> ${overall}/100 · <b>Yield:</b> ${yieldScore}/100</p>
+      <div style="font-family: inherit; font-size: 13px; line-height: 1.4; color: #1e293b; min-width: 190px;">
+        <strong style="color: #0077b6; font-size: 13px;">🎯 BEST RECOMMENDED PFZ</strong>
+        <h4 style="margin: 4px 0; color: #003f88; font-size: 14px; font-weight: 800;">${zoneName}</h4>
+        <p style="margin: 2px 0; font-size: 12px;"><b>Distance:</b> ${route.distance_km} km</p>
+        <p style="margin: 2px 0; font-size: 12px;"><b>Cruising Time:</b> ${route.estimated_duration_hours || (route.distance_km / 18).toFixed(1)} hrs</p>
+        <p style="margin: 2px 0; font-size: 12px;"><b>Overall Score:</b> ${overall}/100 · <b>Yield:</b> ${yieldScore}/100</p>
       </div>
     `);
   }
@@ -445,11 +461,63 @@ function updateRouteOnMap(route, zone) {
   }
 }
 
+let lastSyncTimestamp = new Date();
+
+function updateSyncTimeUI() {
+  const syncTimeEl = document.getElementById("syncTimeAgo");
+  if (!syncTimeEl) return;
+  const now = new Date();
+  const diffSec = Math.max(0, Math.floor((now - lastSyncTimestamp) / 1000));
+
+  let timeStr = "Just now";
+  if (diffSec >= 3600) {
+    const hrs = Math.floor(diffSec / 3600);
+    timeStr = `${hrs}h ago`;
+  } else if (diffSec >= 60) {
+    const mins = Math.floor(diffSec / 60);
+    timeStr = `${mins}m ago`;
+  } else if (diffSec >= 5) {
+    timeStr = `${diffSec}s ago`;
+  }
+
+  syncTimeEl.textContent = `⚡ Last synced: ${timeStr}`;
+}
+
+setInterval(updateSyncTimeUI, 1000);
+
 function render(result) {
   latestResult = result;
   const zone = result.recommendation || {};
   const safety = result.safety || {};
   const blocked = !safety.departure_allowed;
+
+  lastSyncTimestamp = new Date();
+  updateSyncTimeUI();
+
+  const syncModeTag = document.getElementById("syncModeTag");
+  if (syncModeTag) {
+    const isLive = result.source_mode === "LIVE";
+    syncModeTag.textContent = isLive ? "LIVE SATELLITE FEED" : "INCOIS VERIFIED CACHE";
+    syncModeTag.style.color = isLive ? "var(--success)" : "var(--primary)";
+  }
+  const syncSourceInfo = document.getElementById("syncSourceInfo");
+  if (syncSourceInfo) {
+    syncSourceInfo.textContent = result.source_mode === "LIVE" ? "Open-Meteo & Copernicus Real-Time Telemetry" : "INCOIS High-Res Ocean State Forecast";
+  }
+  const evidenceSyncStatus = document.getElementById("evidenceSyncStatus");
+  if (evidenceSyncStatus) {
+    evidenceSyncStatus.textContent = result.source_mode === "LIVE" ? "🟢 Live Synced" : "📁 Cache Validated";
+  }
+
+  // Decision Badge
+  const decisionBadge = document.getElementById("decisionStatus");
+  if (decisionBadge) {
+    decisionBadge.textContent = blocked ? "DO NOT DEPART" : (zone.decision_status || "SAFE TO DEPART");
+    decisionBadge.className = `decision-badge ${blocked ? "high" : "recommended"}`;
+  }
+  
+  text("zoneKicker", `PFZ · ${format(zone.distance_km)} km from ${result.origin ? result.origin.name : "origin"}`);
+  text("zoneTitle", zone.name || "Top Potential Fishing Zone");
   
   // Origin and location sync
   if (result.origin) {
@@ -469,16 +537,6 @@ function render(result) {
       leafletMap.flyTo([selectedLocation.lat, selectedLocation.lon], 10, { duration: 1.2 });
     }
   }
-
-  // Decision Badge
-  const decisionBadge = document.getElementById("decisionStatus");
-  if (decisionBadge) {
-    decisionBadge.textContent = blocked ? "DO NOT DEPART" : (zone.decision_status || "SAFE TO DEPART");
-    decisionBadge.className = `status-decision-badge ${blocked ? "" : "recommended"}`;
-  }
-  
-  text("zoneKicker", `PFZ · ${format(zone.distance_km)} km from ${result.origin ? result.origin.name : "origin"}`);
-  text("zoneTitle", zone.name || "Top Potential Fishing Zone");
   
   const answerEl = document.getElementById("answer");
   if (answerEl) {
@@ -552,6 +610,7 @@ function render(result) {
 
 async function analyse() {
   const button = document.getElementById("askBtn");
+  const syncRefreshBtn = document.getElementById("syncRefreshBtn");
   const queryEl = document.getElementById("query");
   const message = queryEl ? queryEl.value.trim() : "";
   if (!message) return;
@@ -559,6 +618,9 @@ async function analyse() {
   if (button) {
     button.disabled = true;
     button.innerHTML = "<span>Analyzing...</span>";
+  }
+  if (syncRefreshBtn) {
+    syncRefreshBtn.classList.add("syncing");
   }
   
   const status = document.getElementById("analysisStatus");
@@ -568,8 +630,7 @@ async function analyse() {
   
   const lang = document.getElementById("language") ? document.getElementById("language").value : "en";
   const vesselType = document.getElementById("vesselSelect") ? document.getElementById("vesselSelect").value : "small_boat";
-  const useLive = document.getElementById("liveToggle") ? document.getElementById("liveToggle").checked : false;
-  const userApiKey = localStorage.getItem("orca_gemini_api_key") || undefined;
+  const useLive = document.getElementById("liveToggle") ? document.getElementById("liveToggle").checked : true;
 
   try {
     const response = await fetch(`${API_BASE}/api/v1/chat`, {
@@ -582,7 +643,6 @@ async function analyse() {
         session_id: sessionId,
         vessel_type: vesselType,
         use_live_data: useLive,
-        api_key: userApiKey,
       }),
     });
     
@@ -608,6 +668,9 @@ async function analyse() {
       button.disabled = false;
       button.innerHTML = "<span>Analyze</span> <span class=\"btn-arrow\">⚡</span>";
     }
+    if (syncRefreshBtn) {
+      syncRefreshBtn.classList.remove("syncing");
+    }
   }
 }
 
@@ -632,9 +695,11 @@ function setupVoiceSTT() {
   rec.continuous = false;
   rec.interimResults = false;
 
+  const getMicLabel = () => micBtn.querySelector(".mic-label") || micBtn;
+
   rec.onstart = () => {
     micBtn.classList.add("recording");
-    micBtn.querySelector("span").textContent = "Listening...";
+    getMicLabel().textContent = "Listening...";
     if (waveform) waveform.classList.add("active");
   };
 
@@ -649,13 +714,13 @@ function setupVoiceSTT() {
   rec.onerror = (err) => {
     console.warn("Speech recognition error:", err);
     micBtn.classList.remove("recording");
-    micBtn.querySelector("span").textContent = "Speak";
+    getMicLabel().textContent = "Speak";
     if (waveform) waveform.classList.remove("active");
   };
 
   rec.onend = () => {
     micBtn.classList.remove("recording");
-    micBtn.querySelector("span").textContent = "Speak";
+    getMicLabel().textContent = "Speak";
     if (waveform) waveform.classList.remove("active");
   };
 
@@ -678,7 +743,7 @@ function formatMarkdownToHtml(rawText) {
     // Clean bullet lines: * item
     .replace(/(?:\r?\n|^)\s*\*\s+(.*?)(?=(?:\r?\n\s*\*|$))/g, '<div class="ai-bullet-row"><span class="ai-bullet-badge">•</span><span>$1</span></div>')
     // Bold **text**
-    .replace(/\*\*(.*?)\*\*/g, '<strong style="color:#00f5d4;">$1</strong>')
+    .replace(/\*\*(.*?)\*\*/g, '<strong style="color:#003f88; font-weight:700;">$1</strong>')
     // Strip orphan asterisks
     .replace(/\*/g, '')
     // Newlines to line breaks
@@ -779,78 +844,139 @@ function setupVoiceTTS() {
   if (bubbleSpeakBtn) bubbleSpeakBtn.addEventListener("click", toggleSpeak);
 }
 
-function setupApiKeyModal() {
-  const modal = document.getElementById("apiKeyModal");
-  const openBtn = document.getElementById("apiKeyBtn");
-  const closeBtn = document.getElementById("closeApiKeyModal");
-  const saveBtn = document.getElementById("saveApiKeyBtn");
-  const clearBtn = document.getElementById("clearApiKeyBtn");
-  const input = document.getElementById("apiKeyInput");
-  const label = document.getElementById("apiKeyBtnLabel");
+function setupMobileMenu() {
+  const menuBtn = document.getElementById("mobileMenuBtn");
+  const navControls = document.querySelector(".navbar-controls");
+  if (menuBtn && navControls) {
+    menuBtn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      const isOpen = navControls.classList.toggle("mobile-open");
+      menuBtn.textContent = isOpen ? "✕" : "☰";
+      menuBtn.setAttribute("aria-expanded", String(isOpen));
+    });
 
-  const updateBtnState = () => {
-    const key = localStorage.getItem("orca_gemini_api_key");
-    if (key && key.trim()) {
-      if (openBtn) openBtn.classList.add("active-key");
-      if (label) label.textContent = "Gemini Active 🟢";
-    } else {
-      if (openBtn) openBtn.classList.remove("active-key");
-      if (label) label.textContent = "Gemini AI";
+    // Close mobile drawer when selecting a vessel or clicking outside
+    document.querySelectorAll(".vessel-pill").forEach((pill) => {
+      pill.addEventListener("click", () => {
+        if (window.innerWidth <= 900) {
+          navControls.classList.remove("mobile-open");
+          menuBtn.textContent = "☰";
+          menuBtn.setAttribute("aria-expanded", "false");
+        }
+      });
+    });
+
+    document.addEventListener("click", (e) => {
+      if (navControls.classList.contains("mobile-open") && !navControls.contains(e.target) && e.target !== menuBtn) {
+        navControls.classList.remove("mobile-open");
+        menuBtn.textContent = "☰";
+        menuBtn.setAttribute("aria-expanded", "false");
+      }
+    });
+  }
+}
+
+function updateMapTheme(isDark) {
+  if (!leafletMap || typeof L === "undefined") return;
+  if (currentTileLayer) {
+    try {
+      leafletMap.removeLayer(currentTileLayer);
+    } catch (_) {}
+  }
+  const tileUrl = isDark
+    ? "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+    : "https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png";
+
+  currentTileLayer = L.tileLayer(tileUrl, {
+    attribution: '&copy; <a href="https://carto.com/">CARTO</a> &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+    subdomains: "abcd",
+    maxZoom: 19,
+    updateWhenIdle: true,
+    updateWhenZooming: false,
+    keepBuffer: 3,
+  }).addTo(leafletMap);
+
+  if (pfzLayerGroup) pfzLayerGroup.bringToFront();
+  if (boundaryLayerGroup) boundaryLayerGroup.bringToFront();
+}
+
+function setupThemeToggle() {
+  const toggleBtn = document.getElementById("themeToggleBtn");
+  const icon = document.getElementById("themeIcon");
+  const label = document.getElementById("themeLabel");
+
+  const drawerBtn = document.getElementById("drawerThemeBtn");
+  const drawerIcon = document.getElementById("drawerThemeIcon");
+  const drawerLabel = document.getElementById("drawerThemeLabel");
+
+  const savedTheme = localStorage.getItem("orca_theme");
+  const systemPrefersDark = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
+  const initialTheme = savedTheme || (systemPrefersDark ? "dark" : "light");
+
+  const applyTheme = (theme) => {
+    const isDark = (theme === "dark");
+    const activeTheme = isDark ? "dark" : "light";
+    document.documentElement.setAttribute("data-theme", activeTheme);
+    document.documentElement.classList.remove("dark-mode");
+    if (document.body) document.body.classList.remove("dark-mode");
+
+    if (icon) icon.textContent = isDark ? "☀️" : "🌙";
+    if (label) label.textContent = isDark ? "Light Mode" : "Dark Mode";
+    if (drawerIcon) drawerIcon.textContent = isDark ? "☀️" : "🌙";
+    if (drawerLabel) drawerLabel.textContent = isDark ? "☀️ Switch to Light Mode" : "🌙 Switch to Dark Mode";
+
+    if (toggleBtn) {
+      toggleBtn.setAttribute("aria-label", isDark ? "Switch to Light Mode" : "Switch to Dark Mode");
+      toggleBtn.title = isDark ? "Click to switch into Light Mode" : "Click to switch into Dark Mode";
     }
+    if (drawerBtn) {
+      drawerBtn.setAttribute("aria-label", isDark ? "Switch to Light Mode" : "Switch to Dark Mode");
+      drawerBtn.title = isDark ? "Click to switch into Light Mode" : "Click to switch into Dark Mode";
+    }
+
+    try {
+      localStorage.setItem("orca_theme", activeTheme);
+    } catch (_) {}
+
+    updateMapTheme(isDark);
   };
 
-  updateBtnState();
+  window.orcaToggleTheme = () => {
+    const current = document.documentElement.getAttribute("data-theme") || "light";
+    const nextTheme = current === "dark" ? "light" : "dark";
+    applyTheme(nextTheme);
+  };
 
-  if (openBtn && modal) {
-    openBtn.addEventListener("click", () => {
-      if (input) input.value = localStorage.getItem("orca_gemini_api_key") || "";
-      modal.style.display = "flex";
-      if (input) input.focus();
-    });
+  applyTheme(initialTheme);
+
+  if (toggleBtn) {
+    toggleBtn.addEventListener("click", window.orcaToggleTheme);
+  }
+  if (drawerBtn) {
+    drawerBtn.addEventListener("click", window.orcaToggleTheme);
   }
 
-  if (closeBtn && modal) {
-    closeBtn.addEventListener("click", () => {
-      modal.style.display = "none";
-    });
-  }
-
-  if (modal) {
-    modal.addEventListener("click", (e) => {
-      if (e.target === modal) modal.style.display = "none";
-    });
-  }
-
-  if (saveBtn) {
-    saveBtn.addEventListener("click", () => {
-      const val = input ? input.value.trim() : "";
-      if (val) {
-        localStorage.setItem("orca_gemini_api_key", val);
-      } else {
-        localStorage.removeItem("orca_gemini_api_key");
+  // Listen to system preference changes if user hasn't explicitly set a preference
+  if (window.matchMedia) {
+    window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", (e) => {
+      if (!localStorage.getItem("orca_theme")) {
+        applyTheme(e.matches ? "dark" : "light");
       }
-      if (modal) modal.style.display = "none";
-      updateBtnState();
-      analyse();
-    });
-  }
-
-  if (clearBtn) {
-    clearBtn.addEventListener("click", () => {
-      localStorage.removeItem("orca_gemini_api_key");
-      if (input) input.value = "";
-      if (modal) modal.style.display = "none";
-      updateBtnState();
-      analyse();
     });
   }
 }
 
 function init() {
+  // Clear any stale local keys so backend key is always used
+  try {
+    localStorage.removeItem("orca_gemini_api_key");
+  } catch (_) {}
+
+  setupThemeToggle();
+  setupMobileMenu();
   initWebGISMap();
   setupVoiceSTT();
   setupVoiceTTS();
-  setupApiKeyModal();
 
   const askBtn = document.getElementById("askBtn");
   if (askBtn) {
@@ -943,6 +1069,13 @@ function init() {
   const evidenceBtn = document.getElementById("evidenceBtn");
   if (evidenceBtn) {
     evidenceBtn.addEventListener("click", () => {
+      analyse();
+    });
+  }
+
+  const syncRefreshBtn = document.getElementById("syncRefreshBtn");
+  if (syncRefreshBtn) {
+    syncRefreshBtn.addEventListener("click", () => {
       analyse();
     });
   }

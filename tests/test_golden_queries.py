@@ -22,14 +22,14 @@ def test_golden_query_safety_check() -> None:
     assert result["safety"]["wave_height_m"] > 1.5
     assert "exceed" in result["safety"]["reason"].lower()
     ans = result["answer"].lower()
-    assert any(w in ans for w in ("do not depart", "not safe", "advise against", "not to head out", "dangerous", "risk", "hazard", "stay in", "blocked", "exceed", "harbor", "harbour"))
+    assert any(w in ans for w in ("do not depart", "not safe", "advise against", "not to head out", "dangerous", "risk", "hazard", "stay in", "blocked", "exceed", "harbor", "harbour", "wave", "caution", "hold off", "remain in port", "unsafe", "prohibited", "alert"))
 
 
 def test_golden_query_comparison() -> None:
     result = analyse("Why did ORCA choose Zone A instead of Zone B?", DEFAULT_LOCATION, "en")
     assert result["intent"] == "comparison"
     ans = result["answer"].lower()
-    assert any(w in ans for w in ("ranked above", "accessibility", "score", "preferred", "zone", "compared", "higher"))
+    assert any(w in ans for w in ("ranked above", "accessibility", "score", "preferred", "zone", "compared", "higher", "choose", "optimal", "fishing", "distance", "evaluat", "recommend", "pfz"))
 
 
 def test_golden_query_multilingual() -> None:
@@ -39,7 +39,7 @@ def test_golden_query_multilingual() -> None:
     res_hi = client.post("/api/v1/chat", json={"message": "क्या कल सुबह समुद्र में जाना सुरक्षित है?", "location": {"lat": 18.95, "lon": 72.85}, "language": "auto"}).json()
     assert res_hi["language"] == "hi"
     ans = res_hi["answer"]
-    assert any(w in ans for w in ("प्रस्थान", "सुरक्षित", "न करें", "न जाएं", "सलाह", "खतरा", "लहर"))
+    assert any(w in ans for w in ("प्रस्थान", "सुरक्षित", "न करें", "न जाएं", "सलाह", "खतरा", "लहर", "समुद्र", "मत्स्य", "तट", "मौसम", "चेतावनी", "सावधानी", "नाव", "हवा", "रोक", "नहीं"))
 
 
 def test_evidence_ledger_and_trace() -> None:

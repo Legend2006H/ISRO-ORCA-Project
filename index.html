@@ -8,7 +8,28 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Noto+Sans+Devanagari:wght@400;500;600;700&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <link rel="stylesheet" href="./styles.css?v=20260829-clean" />
+    <link rel="stylesheet" href="./styles.css?v=20260829-clean-theme-v6" />
+    <script>
+      (function() {
+        try {
+          var saved = localStorage.getItem("orca_theme");
+          var systemDark = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
+          var theme = saved || (systemDark ? "dark" : "light");
+          document.documentElement.setAttribute("data-theme", theme);
+          window.addEventListener("DOMContentLoaded", function() {
+            var isDark = (document.documentElement.getAttribute("data-theme") === "dark");
+            var icon = document.getElementById("themeIcon");
+            var label = document.getElementById("themeLabel");
+            var drawerIcon = document.getElementById("drawerThemeIcon");
+            var drawerLabel = document.getElementById("drawerThemeLabel");
+            if (icon) icon.textContent = isDark ? "☀️" : "🌙";
+            if (label) label.textContent = isDark ? "Light Mode" : "Dark Mode";
+            if (drawerIcon) drawerIcon.textContent = isDark ? "☀️" : "🌙";
+            if (drawerLabel) drawerLabel.textContent = isDark ? "☀️ Switch to Light Mode" : "🌙 Switch to Dark Mode";
+          });
+        } catch (_) {}
+      })();
+    </script>
   </head>
   <body>
 
@@ -30,8 +51,15 @@
           <a href="#trace" class="nav-link">Trace</a>
         </nav>
 
-        <!-- Mobile Menu Toggle -->
-        <button class="mobile-menu-toggle" id="mobileMenuBtn" type="button" aria-label="Toggle menu">☰</button>
+        <!-- Mobile Menu & Theme Toggle -->
+        <div class="nav-right-actions">
+          <button class="theme-toggle-btn" id="themeToggleBtn" type="button" aria-label="Toggle Dark/Light Mode" title="Toggle Theme">
+            <span class="theme-icon" id="themeIcon">🌙</span>
+            <span class="theme-label" id="themeLabel">Dark Mode</span>
+          </button>
+          <button class="mobile-menu-toggle" id="mobileMenuBtn" type="button" aria-label="Toggle menu">☰</button>
+        </div>
+
         <div class="navbar-controls">
           <!-- Vessel Type -->
           <div class="vessel-switcher">
@@ -52,24 +80,25 @@
             <option value="mr">🚩 मराठी</option>
           </select>
 
-          <!-- Live Toggle -->
+          <!-- Theme Toggle (In Mobile Drawer) -->
+          <button class="theme-toggle-btn mobile-drawer-theme-btn" id="drawerThemeBtn" type="button" aria-label="Toggle Theme">
+            <span class="theme-icon" id="drawerThemeIcon">🌙</span>
+            <span class="theme-label" id="drawerThemeLabel">Dark Theme</span>
+          </button>
+
+          <!-- Live Toggle (Default Active) -->
           <div class="live-toggle-wrap">
             <label class="toggle-label">
-              <input type="checkbox" id="liveToggle" />
+              <input type="checkbox" id="liveToggle" checked />
               <span class="toggle-switch"></span>
               <span class="toggle-text-label">Live Feed</span>
             </label>
-            <small id="feedSourceLabel" class="feed-label">INCOIS Cache</small>
+            <small id="feedSourceLabel" class="feed-label">Open-Meteo & Copernicus</small>
           </div>
 
           <!-- GPS -->
           <button class="btn-outline" id="locateBtn" type="button">
             📍 <span id="locationText">Mumbai Harbour (18.95°N, 72.85°E)</span>
-          </button>
-
-          <!-- Gemini Key -->
-          <button class="btn-outline btn-key" id="apiKeyBtn" type="button" title="Configure Gemini API Key">
-            🔑 <span id="apiKeyBtnLabel">Gemini AI</span>
           </button>
         </div>
       </div>
@@ -86,7 +115,9 @@
             <h2>What do you need to know before you sail?</h2>
           </div>
           <div class="voice-controls">
-            <button id="micBtn" class="btn-secondary" title="Voice Input" type="button">🎙️ Speak</button>
+            <button id="micBtn" class="btn-secondary" title="Voice Input" type="button">
+              <span class="mic-icon">🎙️</span> <span class="mic-label">Speak</span>
+            </button>
             <button id="speakBtn" class="btn-secondary" title="Listen to AI" type="button">
               <span class="speaker-icon">🔊</span> <span>Audio</span>
             </button>
@@ -114,10 +145,26 @@
             <button class="chip" data-query="Where is the nearest Potential Fishing Zone to me today?">📍 Nearest PFZ</button>
             <button class="chip" data-query="Which fishing zone is worst or riskiest to avoid?">⚠️ Riskiest Zone</button>
             <button class="chip" data-query="Is it safe to venture into the sea tomorrow morning?">🛡️ Safety Check</button>
-            <button class="chip" data-query="Why did ORCA choose Zone A instead of Zone B?">⚖️ Why Zone A vs B?</button>
           </div>
         </div>
       </section>
+ 
+      <!-- Live Marine Telemetry & Real-Time Sync Bar -->
+      <div class="live-sync-banner" id="liveSyncBanner">
+        <div class="sync-banner-left">
+          <span class="sync-pulse-dot"></span>
+          <span class="sync-live-tag" id="syncModeTag">LIVE SATELLITE FEED</span>
+          <span class="sync-divider">·</span>
+          <span class="sync-time-text" id="syncTimeAgo">⚡ Last synced: Just now</span>
+          <span class="sync-divider">·</span>
+          <span class="sync-source-info" id="syncSourceInfo">Open-Meteo & Copernicus Marine Telemetry</span>
+        </div>
+        <div class="sync-banner-right">
+          <button class="sync-refresh-btn" id="syncRefreshBtn" type="button" title="Fetch fresh live satellite and ocean observations">
+            <span class="sync-refresh-icon">↻</span> <span>Sync Now</span>
+          </button>
+        </div>
+      </div>
 
       <!-- SECTION 2: AI Recommendation + Weather (2-column grid) -->
       <section class="two-col-grid">
@@ -228,7 +275,7 @@
               </svg>
             </div>
             <div class="wave-digits">
-              <strong id="waveValue">2.2 m</strong>
+              <strong id="waveValue">-- m</strong>
               <span>SIGNIFICANT WAVE HEIGHT</span>
             </div>
           </div>
@@ -237,28 +284,28 @@
           <div class="weather-metrics-grid">
             <div class="metric-tile">
               <span class="metric-icon">💨</span>
-              <div class="metric-data"><span id="hazardWindVal">8.0 m/s</span><small>Wind Speed</small></div>
+              <div class="metric-data"><span id="hazardWindVal">-- m/s</span><small>Wind Speed</small></div>
             </div>
             <div class="metric-tile">
               <span class="metric-icon">🌊</span>
-              <div class="metric-data"><span id="hazardSwellVal">1.0 m</span><small>Swell Height</small></div>
+              <div class="metric-data"><span id="hazardSwellVal">-- m</span><small>Swell Height</small></div>
             </div>
             <div class="metric-tile">
               <span class="metric-icon">🧭</span>
-              <div class="metric-data"><span id="hazardCurrentVal">0.1 m/s</span><small>Surface Current</small></div>
+              <div class="metric-data"><span id="hazardCurrentVal">-- m/s</span><small>Surface Current</small></div>
             </div>
             <div class="metric-tile">
               <span class="metric-icon">⚠️</span>
-              <div class="metric-data"><span id="hazardReasonVal">Wave exceeds boat threshold</span><small>Safety Clearance</small></div>
+              <div class="metric-data"><span id="hazardReasonVal">Evaluating live conditions...</span><small>Safety Clearance</small></div>
             </div>
           </div>
 
           <!-- Topbar Telemetry (hidden, used by app.js) -->
-          <span id="topbarSST" style="display:none;">28.5°C</span>
-          <span id="topbarWave" style="display:none;">2.2m</span>
+          <span id="topbarSST" style="display:none;">28.2°C</span>
+          <span id="topbarWave" style="display:none;">1.5m</span>
 
           <div class="card-footer">
-            <span class="source-text" id="sourceLine">INCOIS Ocean State Forecast · Live Feed</span>
+            <span class="source-text" id="sourceLine">Open-Meteo & Copernicus · Live Marine Stream</span>
           </div>
         </article>
       </section>
@@ -312,7 +359,10 @@
               <span class="section-tag">DATA PROVENANCE</span>
               <h3>Evidence Ledger</h3>
             </div>
-            <button class="btn-sm" id="evidenceBtn" type="button">Refresh ↻</button>
+            <div class="evidence-header-actions">
+              <span class="evidence-sync-status" id="evidenceSyncStatus">🟢 Live Synced</span>
+              <button class="btn-sm" id="evidenceBtn" type="button">Refresh ↻</button>
+            </div>
           </div>
           <div id="evidenceList" class="evidence-list"></div>
         </article>
@@ -342,28 +392,7 @@
       </footer>
     </main>
 
-    <!-- Gemini API Key Modal -->
-    <div id="apiKeyModal" class="modal-overlay" style="display: none;">
-      <div class="modal-card">
-        <div class="modal-header">
-          <div>
-            <span class="section-tag tag-purple">AI ENGINE CONFIG</span>
-            <h3>Google Gemini API Key</h3>
-          </div>
-          <button id="closeApiKeyModal" class="modal-close" type="button">&times;</button>
-        </div>
-        <p class="modal-desc">
-          Connect your Google Gemini API key for real-time conversational responses, multilingual explanation, and typo-tolerant chat.
-        </p>
-        <div class="modal-input-group">
-          <input type="password" id="apiKeyInput" placeholder="Paste your Gemini API Key here (AIzaSy...)" autocomplete="off" />
-        </div>
-        <div class="modal-actions">
-          <button id="clearApiKeyBtn" class="btn-secondary" type="button">Clear</button>
-          <button id="saveApiKeyBtn" class="btn-primary" type="button">Save Key ⚡</button>
-        </div>
-      </div>
-    </div>
+
 
     <!-- Scripts -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -378,27 +407,8 @@
             menuBtn.textContent = navControls.classList.contains('mobile-open') ? '✕' : '☰';
           });
         }
-
-        // Scroll-triggered reveal animations using IntersectionObserver
-        const observer = new IntersectionObserver(function(entries) {
-          entries.forEach(function(entry) {
-            if (entry.isIntersecting) {
-              entry.target.style.opacity = '1';
-              entry.target.style.transform = 'translateY(0)';
-              observer.unobserve(entry.target);
-            }
-          });
-        }, { threshold: 0.1, rootMargin: '0px 0px -40px 0px' });
-
-        // Observe evidence items and trace items for staggered entrance
-        document.querySelectorAll('.evidence-item, .trace-timeline li, .cyber-timeline-list li').forEach(function(el, i) {
-          el.style.opacity = '0';
-          el.style.transform = 'translateY(15px)';
-          el.style.transition = 'opacity 0.4s ease ' + (i * 0.06) + 's, transform 0.4s ease ' + (i * 0.06) + 's';
-          observer.observe(el);
-        });
       });
     </script>
-    <script src="./app.js?v=20260829-clean"></script>
+    <script src="./app.js?v=20260829-clean-theme-v2"></script>
   </body>
 </html>

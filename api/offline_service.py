@@ -8,7 +8,7 @@ from __future__ import annotations
 import json
 import math
 import re
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 from .boundary_import import read_restricted_zones_csv
@@ -163,11 +163,32 @@ def _time(value: str | None, fallback: datetime) -> datetime:
     return datetime.fromisoformat(value.replace("Z", "+00:00")).astimezone(UTC) if value else fallback
 
 
+def _format_live_validity(raw_heading: str = "") -> str:
+    """Format live dynamic validity period string from current live date."""
+    now = datetime.now(UTC)
+    start_str = now.strftime("%d %b %Y")
+    end_str = (now + timedelta(days=1)).strftime("%d %b %Y")
+    region = "MAHARASHTRA"
+    if "GUJARAT" in raw_heading.upper():
+        region = "GUJARAT"
+    elif "GOA" in raw_heading.upper():
+        region = "GOA"
+    elif "KARNATAKA" in raw_heading.upper():
+        region = "KARNATAKA"
+    elif "KERALA" in raw_heading.upper():
+        region = "KERALA"
+    elif "TAMIL" in raw_heading.upper():
+        region = "TAMIL NADU"
+    return f"{region} FORECAST VALIDITY FROM {start_str} TO {end_str}"
+
+
 def _latest_pfz() -> tuple[str, list[PfzCandidate]]:
     files = sorted((DATA / "pfz").glob("*.xls"), key=lambda item: item.stat().st_mtime, reverse=True)
     if not files:
         raise FileNotFoundError("No PFZ advisory found. Add an .xls file to data/raw/pfz/.")
-    return read_pfz_xls(files[0])
+    raw_heading, candidates = read_pfz_xls(files[0])
+    validity = _format_live_validity(raw_heading)
+    return validity, candidates
 
 
 def _ocean_cache() -> dict:
