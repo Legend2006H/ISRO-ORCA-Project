@@ -94,7 +94,7 @@ flowchart TD
 You can set this up on your local machine in just a few minutes! 💻
 
 ### ⚡ Option A: Quick Start (Windows One-Click)
-Double-click [`run.bat`](file:///d:/projects/ISRO-ORCA-Project/run.bat) or run it in your terminal:
+Double-click [`run.bat`](./run.bat) or run it in your terminal:
 ```cmd
 .\run.bat
 ```
