@@ -64,6 +64,6 @@ echo.
 start "" "http://127.0.0.1:8000/"
 
 REM 6. Run FastAPI application via uvicorn
-%PYTHON_CMD% -m uvicorn api.main:app --host 127.0.0.1 --port 8000 --reload
+python -m uvicorn api.main:app --host 127.0.0.1 --port 8000 --reload
 
 pause
