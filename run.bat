@@ -8,13 +8,14 @@ echo.
 cd /d "%~dp0"
 
 REM 1. Locate Python executable
+set "PYTHON_CMD="
 where python >nul 2>nul
-if %errorlevel% equ 0 (
-    set PYTHON_CMD=python
+if not errorlevel 1 (
+    set "PYTHON_CMD=python"
 ) else (
     where py >nul 2>nul
-    if %errorlevel% equ 0 (
-        set PYTHON_CMD=py
+    if not errorlevel 1 (
+        set "PYTHON_CMD=py"
     ) else (
         echo [ERROR] Python was not found in PATH.
         echo Please install Python 3.10 or higher.
