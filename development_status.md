@@ -38,7 +38,7 @@ Double-click `run.bat` or run `.\run.bat` in terminal. It automatically checks P
 
 ### Option B: Manual Setup
 1. Create venv: `python -m venv venv`
-2. Activate venv: `.\venv\Scripts\Activate.ps1`
+2. Activate venv: PowerShell: `./venv/Scripts/Activate.ps1` (or CMD: `venv\\Scripts\\activate.bat`)
 3. Install dependencies: `pip install -r requirements.txt`
 4. Configure `.env` (optional): Add `GEMINI_API_KEY=your_key_here`
 5. Start the API server: `uvicorn api.main:app --reload`
