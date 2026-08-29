@@ -32,7 +32,14 @@ This document outlines the current state of the ORCA Marine Intelligence Project
 - **Gemini API Key Setup**: Reads `GEMINI_API_KEY` from `.env`, system environment, or directly from the in-app `🔑 Gemini AI` configuration modal (stored locally in browser). When enabled, it provides real-time conversational LLM reasoning that gracefully interprets typos, broken grammar, phonetic phrasing, and glitchy inputs. If no key is configured, it falls back to an intelligent query-responsive offline engine.
 
 ## How to Run Locally
-1. Install dependencies: `pip install -r requirements.txt`
-2. Configure `.env` (optional): Add `GEMINI_API_KEY=your_key_here`
-3. Start the API server: `uvicorn api.main:app --reload`
-4. Open a browser and navigate to `http://127.0.0.1:8000/` to access the application.
+
+### Option A: One-Click / Automated Script (Windows)
+Double-click `run.bat` or run `.\run.bat` in terminal. It automatically checks Python, creates `venv` if missing, verifies and installs missing requirements, opens the browser, and launches Uvicorn.
+
+### Option B: Manual Setup
+1. Create venv: `python -m venv venv`
+2. Activate venv: `.\venv\Scripts\Activate.ps1`
+3. Install dependencies: `pip install -r requirements.txt`
+4. Configure `.env` (optional): Add `GEMINI_API_KEY=your_key_here`
+5. Start the API server: `uvicorn api.main:app --reload`
+6. Open a browser and navigate to `http://127.0.0.1:8000/` to access the application.
