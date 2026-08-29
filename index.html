@@ -396,19 +396,6 @@
 
     <!-- Scripts -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <script>
-      // Mobile hamburger menu toggle
-      document.addEventListener('DOMContentLoaded', function() {
-        const menuBtn = document.getElementById('mobileMenuBtn');
-        const navControls = document.querySelector('.navbar-controls');
-        if (menuBtn && navControls) {
-          menuBtn.addEventListener('click', function() {
-            navControls.classList.toggle('mobile-open');
-            menuBtn.textContent = navControls.classList.contains('mobile-open') ? '✕' : '☰';
-          });
-        }
-      });
-    </script>
-    <script src="./app.js?v=20260829-clean-theme-v2"></script>
+    <script src="./app.js?v=20260829-mobile-menu-fix"></script>
   </body>
 </html>
