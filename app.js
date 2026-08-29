@@ -502,7 +502,7 @@ function render(result) {
   if (ringProgress) {
     const offset = Math.max(0, 264 - (264 * scoreVal / 100));
     ringProgress.style.strokeDashoffset = offset;
-    ringProgress.style.stroke = blocked ? "var(--coral)" : "var(--cyan)";
+    ringProgress.style.stroke = blocked ? "#ef4444" : "#0077b6";
   }
   
   percent("fishingBar", zone.fishing_score);

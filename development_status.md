@@ -3,7 +3,7 @@
 This document outlines the current state of the ORCA Marine Intelligence Project to help any new developer or AI model quickly understand what has been built so far and what the architecture looks like.
 
 ## Architecture & Technology Stack
-- **Frontend**: A single-page HTML application (`index.html`, `styles.css`, `app.js`). It features a modern "cyber-ocean" glassmorphism theme and uses **Leaflet** for the interactive WebGIS radar.
+- **Frontend**: A single-page HTML application (`index.html`, `styles.css`, `app.js`). It features a clean professional "ISRO Official Hybrid" light theme with white backgrounds, ocean blue headers, saffron accent border, and rich CSS animations (card entrance, shimmer bars, scroll-reveal, micro-interactions). Uses **Leaflet** for the interactive WebGIS radar.
 - **Backend**: A Python **FastAPI** backend (`api/main.py`) serving as the orchestration layer and REST API.
 - **AI/LLM**: Google Gemini (`gemini_agent.py`) is used for generating human-readable, grounded multilingual marine intelligence with automatic `.env` loading and multi-model fallback (`gemini-1.5-flash`, `gemini-2.0-flash`, `gemini-1.5-pro`).
 
