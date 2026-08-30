@@ -26,7 +26,7 @@ This document outlines the current state of the ORCA Marine Intelligence Project
   - `Check Weather`: Instantly triggers live weather, wave, swell, and wind forecast safety deliberation.
   - `Other Options`: Deliberates alternative Potential Fishing Zones and comparative rankings.
 - **Map Floating Controls & Seamless Dashboard Navigation**: Added one-tap floating controls on the map card (🎯 Re-center origin, 🗂️ Toggle GIS layer overlays, ⛶ Fullscreen map mode) and seamless jump buttons to AI Recommendations, Wave Safety Alerts, Evidence Ledgers, and Marine Species cards.
-- **Synchronized Multi-Card Telemetry System**: Fully synchronized Best Fishing Zone, Safety Alert, and Ocean Metrics cards with live dynamic PFZ scores, probability tags, localized marine target species, clean distance readings, vessel-specific wave limits, hazard distance, and ocean telemetry (wind speed km/h, wave height, SST, current velocity, chlorophyll).
+- **Synchronized Multi-Card Telemetry System**: Fully synchronized Best Fishing Zone, Safety Alert, and Ocean Metrics cards with live dynamic PFZ scores, probability tags, localized marine target species, clean distance readings, vessel-specific wave limits, hazard distance, and ocean telemetry (wind speed km/h, wave height, SST, current velocity, chlorophyll). Features fluid CSS container queries and responsive grid breakpoints ensuring all 5 metric boxes remain 100% visible and beautifully formatted across all desktop and mobile viewport widths without overlapping.
 - **Evidence Ledger & Reasoning Trace**: Dedicated UI panels to display the agentic orchestration pipeline and data provenance.
 
 ### 2. Backend Orchestration (FastAPI)
