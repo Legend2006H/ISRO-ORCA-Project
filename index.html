@@ -1,68 +1,82 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-theme="dark">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>ORCA — Marine Intelligence Platform | ISRO · INCOIS</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>ORCA — Marine Intelligence Command Center | ISRO · INCOIS</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Noto+Sans+Devanagari:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;600;700&family=Noto+Sans+Devanagari:wght@400;500;600;700&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <link rel="stylesheet" href="./styles.css?v=20260829-clean-theme-v6" />
+    <link rel="stylesheet" href="./styles.css?v=20260830-command-v2" />
     <script>
       (function() {
         try {
           var saved = localStorage.getItem("orca_theme");
           var systemDark = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
-          var theme = saved || (systemDark ? "dark" : "light");
+          var theme = saved || (systemDark ? "dark" : "dark");
           document.documentElement.setAttribute("data-theme", theme);
-          window.addEventListener("DOMContentLoaded", function() {
-            var isDark = (document.documentElement.getAttribute("data-theme") === "dark");
-            var icon = document.getElementById("themeIcon");
-            var label = document.getElementById("themeLabel");
-            var drawerIcon = document.getElementById("drawerThemeIcon");
-            var drawerLabel = document.getElementById("drawerThemeLabel");
-            if (icon) icon.textContent = isDark ? "☀️" : "🌙";
-            if (label) label.textContent = isDark ? "Light Mode" : "Dark Mode";
-            if (drawerIcon) drawerIcon.textContent = isDark ? "☀️" : "🌙";
-            if (drawerLabel) drawerLabel.textContent = isDark ? "☀️ Switch to Light Mode" : "🌙 Switch to Dark Mode";
-          });
         } catch (_) {}
       })();
     </script>
   </head>
   <body>
 
-    <!-- ===== TOP NAVBAR ===== -->
+    <!-- ===== TOP NAVIGATION CONSOLE ===== -->
     <header class="top-navbar">
       <div class="navbar-inner">
-        <div class="brand">
-          <span class="brand-logo">🌊</span>
-          <div class="brand-text">
-            <strong class="brand-name">ORCA <span class="version-tag">2.0</span></strong>
-            <small class="brand-sub">ISRO · INCOIS Marine Intelligence</small>
+        <!-- Left: Brand & Mobile Hamburger -->
+        <div class="nav-left-group">
+          <button class="menu-icon-btn" id="mobileMenuBtn" type="button" aria-label="Toggle Navigation Drawer">
+            <span class="hamburger-bar"></span>
+            <span class="hamburger-bar"></span>
+            <span class="hamburger-bar"></span>
+          </button>
+          
+          <div class="brand">
+            <div class="brand-logo-wrap">
+              <span class="brand-logo">🌊</span>
+              <span class="logo-radar-ring"></span>
+            </div>
+            <div class="brand-text">
+              <div class="brand-title-row">
+                <strong class="brand-name">ORCA</strong>
+                <span class="version-tag">2.0</span>
+              </div>
+              <small class="brand-sub">Marine EcoSystem Reasoning with Collaborative Agents</small>
+            </div>
           </div>
         </div>
 
-        <nav class="nav-links">
-          <a href="#mission" class="nav-link active">Dashboard</a>
-          <a href="#map" class="nav-link">Map</a>
-          <a href="#evidence" class="nav-link">Evidence</a>
-          <a href="#trace" class="nav-link">Trace</a>
+        <!-- Center: Primary Nav Links -->
+        <nav class="nav-links" id="mainNavLinks">
+          <a href="#dashboard" class="nav-link active" data-nav="dashboard">
+            <span class="nav-icon">📊</span> Dashboard
+          </a>
+          <a href="#zones" class="nav-link" data-nav="zones">
+            <span class="nav-icon">🐟</span> Fishing Zones
+          </a>
+          <a href="#routes" class="nav-link" data-nav="routes">
+            <span class="nav-icon">🧭</span> Routes
+          </a>
+          <a href="#weather" class="nav-link" data-nav="weather">
+            <span class="nav-icon">☁️</span> Weather
+          </a>
+          <a href="#alerts" class="nav-link" data-nav="alerts">
+            <span class="nav-icon">⚠️</span> Alerts
+          </a>
+          <a href="#analytics" class="nav-link" data-nav="analytics">
+            <span class="nav-icon">📈</span> Analytics
+          </a>
+          <a href="#evidence" class="nav-link" data-nav="evidence">
+            <span class="nav-icon">📄</span> Reports
+          </a>
         </nav>
 
-        <!-- Mobile Menu & Theme Toggle -->
+        <!-- Right: Operational Controls & User Profile -->
         <div class="nav-right-actions">
-          <button class="theme-toggle-btn" id="themeToggleBtn" type="button" aria-label="Toggle Dark/Light Mode" title="Toggle Theme">
-            <span class="theme-icon" id="themeIcon">🌙</span>
-            <span class="theme-label" id="themeLabel">Dark Mode</span>
-          </button>
-          <button class="mobile-menu-toggle" id="mobileMenuBtn" type="button" aria-label="Toggle menu">☰</button>
-        </div>
-
-        <div class="navbar-controls">
-          <!-- Vessel Type -->
-          <div class="vessel-switcher">
+          <!-- Vessel Profile Switcher -->
+          <div class="vessel-switcher" title="Select Vessel Safety Threshold">
             <button type="button" class="vessel-pill active" data-vessel="small_boat">🛶 Small Boat</button>
             <button type="button" class="vessel-pill" data-vessel="trawler">🚢 Trawler</button>
             <button type="button" class="vessel-pill" data-vessel="deep_sea">⚓ Deep Sea</button>
@@ -73,84 +87,214 @@
             <option value="deep_sea">deep_sea</option>
           </select>
 
-          <!-- Language -->
-          <select id="language" class="lang-select">
-            <option value="en">🇬🇧 English</option>
-            <option value="hi">🇮🇳 हिन्दी</option>
-            <option value="mr">🚩 मराठी</option>
-          </select>
+          <!-- Language Selector -->
+          <div class="lang-wrap">
+            <select id="language" class="lang-select" aria-label="Select Language">
+              <option value="en">🇬🇧 EN</option>
+              <option value="hi">🇮🇳 हिन्दी</option>
+              <option value="mr">🚩 मराठी</option>
+            </select>
+          </div>
 
-          <!-- Theme Toggle (In Mobile Drawer) -->
-          <button class="theme-toggle-btn mobile-drawer-theme-btn" id="drawerThemeBtn" type="button" aria-label="Toggle Theme">
-            <span class="theme-icon" id="drawerThemeIcon">🌙</span>
-            <span class="theme-label" id="drawerThemeLabel">Dark Theme</span>
-          </button>
-
-          <!-- Live Toggle (Default Active) -->
-          <div class="live-toggle-wrap">
+          <!-- Live Telemetry Toggle -->
+          <div class="live-toggle-wrap" title="Toggle Real-Time Satellite & Marine Stream">
             <label class="toggle-label">
               <input type="checkbox" id="liveToggle" checked />
               <span class="toggle-switch"></span>
-              <span class="toggle-text-label">Live Feed</span>
+              <span class="toggle-text-label">Live</span>
             </label>
-            <small id="feedSourceLabel" class="feed-label">Open-Meteo & Copernicus</small>
+            <small id="feedSourceLabel" class="feed-label" style="display:none;">Open-Meteo & Copernicus</small>
           </div>
 
-          <!-- GPS -->
-          <button class="btn-outline" id="locateBtn" type="button">
+          <!-- GPS Location -->
+          <button class="btn-outline gps-btn" id="locateBtn" type="button" title="Center on GPS or Coastal Location">
+            <span class="gps-dot"></span>
             📍 <span id="locationText">Mumbai Harbour (18.95°N, 72.85°E)</span>
           </button>
+
+          <!-- Theme Toggle -->
+          <button class="theme-toggle-btn" id="themeToggleBtn" type="button" aria-label="Toggle Dark/Light Mode" title="Toggle Theme">
+            <span class="theme-icon" id="themeIcon">☀️</span>
+            <span class="theme-label" id="themeLabel">Light Mode</span>
+          </button>
+
+          <!-- User Profile & Alert Bell -->
+          <div class="user-profile-badge">
+            <div class="profile-avatar">👨‍✈️</div>
+            <div class="profile-info">
+              <span class="profile-name">Fisherman</span>
+              <span class="profile-role" id="currentVesselBadge">1.5m Limit</span>
+            </div>
+            <div class="notification-bell" id="notificationBellBtn" title="Active Maritime Alerts">
+              <span class="bell-icon">🔔</span>
+              <span class="bell-count" id="activeAlertCount">2</span>
+            </div>
+          </div>
         </div>
       </div>
     </header>
 
-    <!-- ===== MAIN CONTENT ===== -->
-    <main class="main-content">
-
-      <!-- SECTION 1: Ask ORCA Query Box -->
-      <section class="section-card query-section" id="mission">
-        <div class="section-header">
-          <div>
-            <span class="section-tag">ASK ORCA</span>
-            <h2>What do you need to know before you sail?</h2>
+    <!-- Mobile Slide-out Drawer Navigation -->
+    <aside class="mobile-drawer" id="mobileDrawer">
+      <div class="drawer-header">
+        <div class="drawer-brand">
+          <span class="brand-logo">🌊</span>
+          <strong>ORCA 2.0</strong>
+        </div>
+        <button class="drawer-close" id="drawerCloseBtn" type="button">✕</button>
+      </div>
+      <div class="drawer-body">
+        <div class="drawer-section-title">NAVIGATION</div>
+        <nav class="drawer-nav-list">
+          <a href="#dashboard" class="drawer-nav-item active"><span class="nav-icon">📊</span> Dashboard</a>
+          <a href="#zones" class="drawer-nav-item"><span class="nav-icon">🐟</span> Fishing Zones</a>
+          <a href="#routes" class="drawer-nav-item"><span class="nav-icon">🧭</span> Routes</a>
+          <a href="#weather" class="drawer-nav-item"><span class="nav-icon">☁️</span> Weather</a>
+          <a href="#alerts" class="drawer-nav-item"><span class="nav-icon">⚠️</span> Alerts</a>
+          <a href="#analytics" class="drawer-nav-item"><span class="nav-icon">📈</span> Analytics</a>
+          <a href="#evidence" class="drawer-nav-item"><span class="nav-icon">📄</span> Reports & Evidence</a>
+        </nav>
+        <div class="drawer-divider"></div>
+        <div class="drawer-section-title">MAP LAYERS (8 ACTIVE)</div>
+        <div class="drawer-layers-list">
+          <div class="layer-toggle-row">
+            <div class="layer-info">
+              <span class="layer-bullet color-green"></span>
+              <span class="layer-name">Fishing Potential</span>
+            </div>
+            <label class="layer-switch">
+              <input type="checkbox" id="mLayerFishing" checked />
+              <span class="slider round"></span>
+            </label>
           </div>
-          <div class="voice-controls">
-            <button id="micBtn" class="btn-secondary" title="Voice Input" type="button">
-              <span class="mic-icon">🎙️</span> <span class="mic-label">Speak</span>
-            </button>
-            <button id="speakBtn" class="btn-secondary" title="Listen to AI" type="button">
-              <span class="speaker-icon">🔊</span> <span>Audio</span>
-            </button>
+          <div class="layer-toggle-row">
+            <div class="layer-info">
+              <span class="layer-bullet color-red"></span>
+              <span class="layer-name">Restricted Zones</span>
+            </div>
+            <label class="layer-switch">
+              <input type="checkbox" id="mLayerRestricted" checked />
+              <span class="slider round"></span>
+            </label>
+          </div>
+          <div class="layer-toggle-row">
+            <div class="layer-info">
+              <span class="layer-bullet color-orange"></span>
+              <span class="layer-name">Hazard Zones</span>
+            </div>
+            <label class="layer-switch">
+              <input type="checkbox" id="mLayerHazards" checked />
+              <span class="slider round"></span>
+            </label>
+          </div>
+          <div class="layer-toggle-row">
+            <div class="layer-info">
+              <span class="layer-bullet color-cyan"></span>
+              <span class="layer-name">Vessels</span>
+            </div>
+            <label class="layer-switch">
+              <input type="checkbox" id="mLayerVessels" checked />
+              <span class="slider round"></span>
+            </label>
+          </div>
+          <div class="layer-toggle-row">
+            <div class="layer-info">
+              <span class="layer-bullet color-blue"></span>
+              <span class="layer-name">Currents</span>
+            </div>
+            <label class="layer-switch">
+              <input type="checkbox" id="mLayerCurrents" checked />
+              <span class="slider round"></span>
+            </label>
+          </div>
+          <div class="layer-toggle-row">
+            <div class="layer-info">
+              <span class="layer-bullet color-purple"></span>
+              <span class="layer-name">SST (°C)</span>
+            </div>
+            <label class="layer-switch">
+              <input type="checkbox" id="mLayerSST" checked />
+              <span class="slider round"></span>
+            </label>
+          </div>
+          <div class="layer-toggle-row">
+            <div class="layer-info">
+              <span class="layer-bullet color-teal"></span>
+              <span class="layer-name">Chlorophyll</span>
+            </div>
+            <label class="layer-switch">
+              <input type="checkbox" id="mLayerChlorophyll" checked />
+              <span class="slider round"></span>
+            </label>
+          </div>
+          <div class="layer-toggle-row">
+            <div class="layer-info">
+              <span class="layer-bullet color-amber"></span>
+              <span class="layer-name">Wind</span>
+            </div>
+            <label class="layer-switch">
+              <input type="checkbox" id="mLayerWind" checked />
+              <span class="slider round"></span>
+            </label>
           </div>
         </div>
 
-        <!-- Voice waveform -->
-        <div class="audio-waveform-bars" id="audioWaveform">
-          <i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i>
+        <div class="drawer-divider"></div>
+        <div class="drawer-section-title">VERIFIED DATA SOURCES</div>
+        <div class="drawer-data-sources-list">
+          <div class="drawer-source-item">
+            <span class="source-icon">🛰️</span>
+            <div>
+              <strong>ISRO / MOSDAC</strong>
+              <small>Satellite Telemetry</small>
+            </div>
+          </div>
+          <div class="drawer-source-item">
+            <span class="source-icon">🌊</span>
+            <div>
+              <strong>INCOIS</strong>
+              <small>Ocean State Forecast</small>
+            </div>
+          </div>
+          <div class="drawer-source-item">
+            <span class="source-icon">🌧️</span>
+            <div>
+              <strong>IMD</strong>
+              <small>Marine Weather & Wind</small>
+            </div>
+          </div>
+          <div class="drawer-source-item">
+            <span class="source-icon">🐟</span>
+            <div>
+              <strong>Fisheries Dept.</strong>
+              <small>Fisheries Advisory Bulletin</small>
+            </div>
+          </div>
+          <div class="drawer-source-item">
+            <span class="source-icon">⚓</span>
+            <div>
+              <strong>Custom Sensors</strong>
+              <small>Real-time Coastal Telemetry</small>
+            </div>
+          </div>
         </div>
 
-        <div class="query-box">
-          <textarea id="query" rows="2" placeholder="Ask ORCA in natural English, Hindi, or Marathi...">Which fishing zone near Mumbai is best tomorrow morning, considering fishing potential and safety?</textarea>
-          <button id="askBtn" class="btn-primary" type="button" onclick="window.orcaAnalyse && window.orcaAnalyse()">
-            Analyze ⚡
+        <div class="drawer-divider"></div>
+        <div class="drawer-section-title">SETTINGS</div>
+        <div class="drawer-controls">
+          <button class="drawer-action-btn" id="drawerThemeBtn" type="button">
+            <span id="drawerThemeIcon">☀️</span> <span id="drawerThemeLabel">Switch to Light Mode</span>
           </button>
         </div>
+      </div>
+    </aside>
+    <div class="drawer-backdrop" id="drawerBackdrop"></div>
 
-        <div class="query-footer">
-          <p id="analysisStatus" class="status-text">
-            <span class="status-dot"></span>
-            Ready to coordinate AI agents across PFZ, weather, ocean, and navigation.
-          </p>
-          <div class="quick-chips">
-            <button class="chip" data-query="Where is the nearest Potential Fishing Zone to me today?">📍 Nearest PFZ</button>
-            <button class="chip" data-query="Which fishing zone is worst or riskiest to avoid?">⚠️ Riskiest Zone</button>
-            <button class="chip" data-query="Is it safe to venture into the sea tomorrow morning?">🛡️ Safety Check</button>
-          </div>
-        </div>
-      </section>
- 
+    <!-- ===== MAIN COMMAND CENTER CONTAINER ===== -->
+    <main class="main-container" id="dashboard">
+
       <!-- Live Marine Telemetry & Real-Time Sync Bar -->
-      <div class="live-sync-banner" id="liveSyncBanner">
+      <section class="live-sync-banner" id="liveSyncBanner">
         <div class="sync-banner-left">
           <span class="sync-pulse-dot"></span>
           <span class="sync-live-tag" id="syncModeTag">LIVE SATELLITE FEED</span>
@@ -164,196 +308,810 @@
             <span class="sync-refresh-icon">↻</span> <span>Sync Now</span>
           </button>
         </div>
-      </div>
+      </section>
 
-      <!-- SECTION 2: AI Recommendation + Weather (2-column grid) -->
-      <section class="two-col-grid">
-
-        <!-- LEFT: AI Recommendation -->
-        <article class="section-card recommendation-card">
-          <div class="section-header">
-            <div>
-              <span class="section-tag tag-green">AI RECOMMENDATION</span>
-              <p class="zone-kicker" id="zoneKicker">PFZ · 45.2 km from Mumbai Harbour</p>
-              <h3 class="zone-title" id="zoneTitle">PFZ near Navgaon</h3>
+      <!-- Mobile Responsive Vessel Type Switcher (All 3 Boat Types in Code) -->
+      <section class="mobile-vessel-selector-bar glass-panel" id="mobileVesselSelectorBar">
+        <div class="m-vessel-header">
+          <span class="m-vessel-title">🚤 SELECT BOAT PROFILE</span>
+          <span class="m-vessel-sub">Recalculates wave safety clearance</span>
+        </div>
+        <div class="m-vessel-pills-grid">
+          <button class="m-vessel-btn active" data-vessel="small_boat" type="button">
+            <span class="v-icon">🚤</span>
+            <div class="v-text">
+              <strong>Small Boat</strong>
+              <small>1.5m Limit</small>
             </div>
-            <div class="decision-badge" id="decisionStatus">DO NOT DEPART</div>
+          </button>
+          <button class="m-vessel-btn" data-vessel="trawler" type="button">
+            <span class="v-icon">🚢</span>
+            <div class="v-text">
+              <strong>Trawler</strong>
+              <small>2.5m Limit</small>
+            </div>
+          </button>
+          <button class="m-vessel-btn" data-vessel="deep_sea" type="button">
+            <span class="v-icon">⚓</span>
+            <div class="v-text">
+              <strong>Deep Sea</strong>
+              <small>4.0m Limit</small>
+            </div>
+          </button>
+        </div>
+      </section>
+
+      <!-- ===== PRIMARY DASHBOARD GRID (4-Column Layout matching Reference) ===== -->
+      <div class="command-grid-layout">
+
+        <!-- COLUMN 1: LAYERS SIDEBAR (Left Panel) -->
+        <aside class="layers-sidebar glass-panel" id="layersPanel">
+          <div class="panel-header">
+            <div class="header-tag-title">
+              <span class="panel-icon">🗂️</span>
+              <h3>LAYERS</h3>
+            </div>
+            <span class="layer-badge-count" id="activeLayersCount">8 Active</span>
           </div>
 
-          <div class="recommendation-body">
-            <!-- Score Gauge -->
-            <div class="score-gauge-wrap">
-              <div class="score-ring">
+          <div class="layers-list">
+            <div class="layer-toggle-row">
+              <div class="layer-info">
+                <span class="layer-bullet color-green"></span>
+                <span class="layer-name">Fishing Potential</span>
+              </div>
+              <label class="layer-switch">
+                <input type="checkbox" id="layerFishing" checked />
+                <span class="slider round"></span>
+              </label>
+            </div>
+
+            <div class="layer-toggle-row">
+              <div class="layer-info">
+                <span class="layer-bullet color-red"></span>
+                <span class="layer-name">Restricted Zones</span>
+              </div>
+              <label class="layer-switch">
+                <input type="checkbox" id="layerRestricted" checked />
+                <span class="slider round"></span>
+              </label>
+            </div>
+
+            <div class="layer-toggle-row">
+              <div class="layer-info">
+                <span class="layer-bullet color-orange"></span>
+                <span class="layer-name">Hazard Zones</span>
+              </div>
+              <label class="layer-switch">
+                <input type="checkbox" id="layerHazards" checked />
+                <span class="slider round"></span>
+              </label>
+            </div>
+
+            <div class="layer-toggle-row">
+              <div class="layer-info">
+                <span class="layer-bullet color-cyan"></span>
+                <span class="layer-name">Vessels</span>
+              </div>
+              <label class="layer-switch">
+                <input type="checkbox" id="layerVessels" checked />
+                <span class="slider round"></span>
+              </label>
+            </div>
+
+            <div class="layer-toggle-row">
+              <div class="layer-info">
+                <span class="layer-bullet color-blue"></span>
+                <span class="layer-name">Currents</span>
+              </div>
+              <label class="layer-switch">
+                <input type="checkbox" id="layerCurrents" checked />
+                <span class="slider round"></span>
+              </label>
+            </div>
+
+            <div class="layer-toggle-row">
+              <div class="layer-info">
+                <span class="layer-bullet color-purple"></span>
+                <span class="layer-name">SST (°C)</span>
+              </div>
+              <label class="layer-switch">
+                <input type="checkbox" id="layerSST" checked />
+                <span class="slider round"></span>
+              </label>
+            </div>
+
+            <div class="layer-toggle-row">
+              <div class="layer-info">
+                <span class="layer-bullet color-teal"></span>
+                <span class="layer-name">Chlorophyll</span>
+              </div>
+              <label class="layer-switch">
+                <input type="checkbox" id="layerChlorophyll" checked />
+                <span class="slider round"></span>
+              </label>
+            </div>
+
+            <div class="layer-toggle-row">
+              <div class="layer-info">
+                <span class="layer-bullet color-amber"></span>
+                <span class="layer-name">Wind</span>
+              </div>
+              <label class="layer-switch">
+                <input type="checkbox" id="layerWind" checked />
+                <span class="slider round"></span>
+              </label>
+            </div>
+          </div>
+
+          <div class="layers-footer">
+            <button class="btn-more-layers" id="moreLayersBtn" type="button">
+              <span>⚙️ More Layers</span>
+            </button>
+          </div>
+        </aside>
+
+        <!-- COLUMN 2: CENTER MAP + OCEAN METRICS (Center Stage) -->
+        <section class="center-map-column">
+          
+          <!-- Ocean Map Container -->
+          <div class="map-command-card glass-panel" id="mapCard">
+            <!-- Map Floating Header Overlay: Zone Suitability Legend -->
+            <div class="map-overlay-legend">
+              <span class="legend-header">ZONE SUITABILITY</span>
+              <div class="legend-items-list">
+                <span class="legend-pill"><i class="dot dot-green"></i> High Suitability</span>
+                <span class="legend-pill"><i class="dot dot-yellow"></i> Moderate Suitability</span>
+                <span class="legend-pill"><i class="dot dot-red"></i> Low Suitability</span>
+                <span class="legend-pill"><i class="dot dot-danger"></i> Restricted Zone</span>
+              </div>
+            </div>
+
+            <!-- Map Floating Controls (Top Right) -->
+            <div class="map-floating-controls">
+              <button class="map-control-btn" id="mapRecenterBtn" title="Re-center Map on Active Origin">🎯</button>
+              <button class="map-control-btn" id="mapLayersQuickBtn" title="Toggle Layer Controls">🗂️</button>
+              <button class="map-control-btn" id="mapFullscreenBtn" title="Toggle Fullscreen Map">⛶</button>
+            </div>
+
+            <!-- Leaflet Hardware-Accelerated Radar -->
+            <div id="leafletMap" class="webgis-map" aria-label="Interactive WebGIS Ocean Radar Map"></div>
+
+            <!-- Scale & Last Updated Overlay (Bottom Left) -->
+            <div class="map-scale-overlay">
+              <span class="scale-bar-line"></span>
+              <span class="scale-text">20 km</span>
+              <span class="map-timestamp" id="mapLastUpdated">Last Updated: Active Live Telemetry</span>
+            </div>
+
+            <!-- High-Tech Multi-Agent Radar Sonar Scanning HUD Overlay -->
+            <div class="map-sonar-scanning-overlay" id="mapSonarScanningOverlay" style="display:none;">
+              <!-- Holographic Corner Brackets -->
+              <div class="sonar-corner-hud tl"></div>
+              <div class="sonar-corner-hud tr"></div>
+              <div class="sonar-corner-hud bl"></div>
+              <div class="sonar-corner-hud br"></div>
+              <div class="sonar-grid-bg"></div>
+
+              <!-- Center Radar Scope -->
+              <div class="sonar-radar-scope">
+                <div class="sonar-compass-ring">
+                  <span class="compass-pt n">N</span>
+                  <span class="compass-pt e">E</span>
+                  <span class="compass-pt s">S</span>
+                  <span class="compass-pt w">W</span>
+                </div>
+                <div class="sonar-crosshair x"></div>
+                <div class="sonar-crosshair y"></div>
+                <div class="sonar-ring ring-1"></div>
+                <div class="sonar-ring ring-2"></div>
+                <div class="sonar-ring ring-3"></div>
+                <div class="sonar-ring ring-pulse-1"></div>
+                <div class="sonar-ring ring-pulse-2"></div>
+                <div class="sonar-sweep-beam"></div>
+                <!-- Radar Blip Targets -->
+                <div class="sonar-blip blip-1"></div>
+                <div class="sonar-blip blip-2"></div>
+                <div class="sonar-blip blip-3"></div>
+                <div class="sonar-center-beacon">🚢</div>
+              </div>
+
+              <!-- High-Tech Telemetry HUD Card -->
+              <div class="sonar-status-hud">
+                <div class="sonar-hud-header">
+                  <span class="hud-pulse-dot"></span>
+                  <strong id="sonarMainStatus">ORCA MULTI-AGENT SCANNING ACTIVE</strong>
+                  <span class="hud-phase-count" id="sonarPhaseCount">PHASE 1/4</span>
+                </div>
+                <p class="sonar-hud-detail" id="sonarStatusDetail">Scanning MOSDAC / INCOIS satellite thermal fronts & chlorophyll bloom...</p>
+                <div class="sonar-progress-track">
+                  <div class="sonar-progress-bar" id="sonarProgressBar"></div>
+                </div>
+                <div class="sonar-agent-chips-row">
+                  <span class="sonar-chip active" id="chipSat">🛰️ Satellite</span>
+                  <span class="sonar-chip" id="chipOcean">🌊 Ocean OSF</span>
+                  <span class="sonar-chip" id="chipGis">🧭 GIS Corridor</span>
+                  <span class="sonar-chip" id="chipAi">🤖 Gemini AI</span>
+                </div>
+                <div class="sonar-telemetry-ticker" id="sonarTelemetryTicker">
+                  <span class="ticker-dot">●</span> <span id="sonarTickerText">LAT: 18.95°N | LON: 72.85°E | BATHYMETRY: 38.4m | SST: 28.6°C | OSF: OPTIMAL</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Route Info Corridor Bar -->
+            <div class="route-corridor-bar" id="routeBanner">
+              <div class="route-left">
+                <span class="route-ship-icon">🚢</span>
+                <div class="route-text-block">
+                  <strong>Safe Navigation Route (A* Corridor)</strong>
+                  <p id="routeHazards">Avoiding shallow reefs, port channels & security geofences</p>
+                </div>
+              </div>
+              <div class="route-right-stats">
+                <div class="r-stat">
+                  <span class="r-val" id="routeDistance">53.4 km</span>
+                  <span class="r-lbl">DISTANCE</span>
+                </div>
+                <div class="r-stat">
+                  <span class="r-val" id="routeDuration">3.0 hrs</span>
+                  <span class="r-lbl">CRUISING TIME</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Ocean Metrics Strip (Under Map) -->
+          <div class="ocean-metrics-row" id="oceanMetricsRow">
+            <!-- Metric 1: Wind Speed -->
+            <div class="ocean-metric-card glass-panel" id="cardMetricWind">
+              <div class="metric-icon-wrap cyan">💨</div>
+              <div class="metric-details">
+                <span class="metric-title">WIND SPEED</span>
+                <div class="metric-main-value">
+                  <strong id="hazardWindVal">18 km/h</strong>
+                  <span class="metric-sub-dir" id="windDirectionArrow">↘ NE</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Metric 2: Wave Height -->
+            <div class="ocean-metric-card glass-panel" id="cardMetricWave">
+              <div class="metric-icon-wrap blue">🌊</div>
+              <div class="metric-details">
+                <span class="metric-title">WAVE HEIGHT</span>
+                <div class="metric-main-value">
+                  <strong id="waveValue">1.8 m</strong>
+                  <span class="metric-sub-tag moderate" id="waveSafetyTag">Moderate</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Metric 3: Sea Surface Temp -->
+            <div class="ocean-metric-card glass-panel" id="cardMetricSST">
+              <div class="metric-icon-wrap purple">🌡️</div>
+              <div class="metric-details">
+                <span class="metric-title">SEA SURFACE TEMP</span>
+                <div class="metric-main-value">
+                  <strong id="topbarSST">28.6 °C</strong>
+                  <span class="metric-sub-tag optimal">Optimal</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Metric 4: Current Speed -->
+            <div class="ocean-metric-card glass-panel" id="cardMetricCurrent">
+              <div class="metric-icon-wrap teal">🧭</div>
+              <div class="metric-details">
+                <span class="metric-title">CURRENT SPEED</span>
+                <div class="metric-main-value">
+                  <strong id="hazardCurrentVal">0.8 m/s</strong>
+                  <span class="metric-sub-tag moderate">Moderate</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Metric 5: Chlorophyll -->
+            <div class="ocean-metric-card glass-panel" id="cardMetricChlorophyll">
+              <div class="metric-icon-wrap green">🌿</div>
+              <div class="metric-details">
+                <span class="metric-title">CHLOROPHYLL</span>
+                <div class="metric-main-value">
+                  <strong id="chlorophyllVal">2.3 mg/m³</strong>
+                  <span class="metric-sub-tag good">Good</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Hidden telemetry values preserved for runtime scripts -->
+          <span id="hazardSwellVal" style="display:none;">1.2 m</span>
+          <span id="hazardReasonVal" style="display:none;">Within safe thresholds</span>
+          <span id="topbarWave" style="display:none;">1.8m</span>
+        </section>
+
+        <!-- COLUMN 3: RIGHT-SIDE CARDS (Best Fishing Zone + Safety Alert) -->
+        <aside class="right-info-column" id="rightInfoCol">
+          
+          <!-- Card 1: BEST FISHING ZONE -->
+          <article class="info-card best-zone-card glass-panel" id="bestZoneCard">
+            <div class="card-header-flex">
+              <div class="card-title-wrap">
+                <span class="status-check-circle">✓</span>
+                <h4 class="card-heading">BEST FISHING ZONE</h4>
+              </div>
+            </div>
+
+            <div class="best-zone-hero">
+              <div class="score-banner-block">
+                <span class="score-kicker">PFZ SCORE</span>
+                <div class="score-huge-text" id="bestPfzScoreDisplay">87%</div>
+                <span class="probability-tag high" id="bestProbabilityTag">High Probability</span>
+              </div>
+              <div class="zone-sat-preview">
+                <div class="sat-heatmap-visual">
+                  <span class="thermal-front-glow"></span>
+                  <span class="radar-scan-line"></span>
+                </div>
+              </div>
+            </div>
+
+            <div class="zone-specs-list">
+              <div class="spec-item">
+                <span class="spec-label">Zone Name:</span>
+                <strong class="spec-value" id="zoneTitle">PFZ near Navgaon</strong>
+              </div>
+              <div class="spec-item">
+                <span class="spec-label">Target Species:</span>
+                <strong class="spec-value" id="bestSpeciesList">Oil Sardine, Mackerel</strong>
+              </div>
+              <div class="spec-item">
+                <span class="spec-label">Distance:</span>
+                <strong class="spec-value" id="zoneKicker">18.5 km from Origin</strong>
+              </div>
+            </div>
+
+            <div class="card-action-wrap">
+              <button class="btn-command-primary" id="btnViewFullZoneDetails" type="button">
+                View Full Details ➔
+              </button>
+            </div>
+          </article>
+
+          <!-- Card 2: SAFETY ALERT -->
+          <article class="info-card safety-alert-card glass-panel" id="safetyAlertCard">
+            <div class="card-header-flex">
+              <div class="card-title-wrap">
+                <span class="alert-triangle-icon">⚠️</span>
+                <h4 class="card-heading alert-heading">SAFETY ALERT</h4>
+              </div>
+              <span class="risk-badge" id="riskBadge">LOW RISK</span>
+            </div>
+
+            <div class="alert-metrics-preview">
+              <div class="alert-metric-item">
+                <span class="alert-icon">🌊</span>
+                <div class="alert-txt">
+                  <span class="alert-lbl">Wave Height:</span>
+                  <strong class="alert-val" id="alertWaveVal">1.8 m (Limit: 1.5m)</strong>
+                </div>
+              </div>
+              <div class="alert-metric-item">
+                <span class="alert-icon">📏</span>
+                <div class="alert-txt">
+                  <span class="alert-lbl">Hazard Distance:</span>
+                  <strong class="alert-val" id="alertDistanceVal">18.5 km</strong>
+                </div>
+              </div>
+            </div>
+
+            <div class="alert-status-pill" id="decisionStatus">
+              SAFE TO DEPART
+            </div>
+
+            <div class="card-action-wrap">
+              <button class="btn-command-danger" id="btnViewAlertDetails" type="button">
+                View Alert Details ➔
+              </button>
+            </div>
+          </article>
+        </aside>
+
+        <!-- COLUMN 4: EMBEDDED VISIBLE ORCA COPILOT PANEL (Directly Visible on Dashboard) -->
+        <aside class="dashboard-copilot-column glass-panel" id="embeddedCopilotPanel">
+          <div class="copilot-drawer-header">
+            <div class="copilot-header-brand">
+              <span class="copilot-icon">🤖</span>
+              <div>
+                <h3>ORCA MODEL</h3>
+                <small>Your AI Marine Assistant</small>
+              </div>
+            </div>
+          </div>
+
+          <div class="copilot-drawer-body">
+            <!-- Chat Conversation Stream -->
+            <div class="copilot-chat-stream" id="copilotChatStream">
+              <!-- Initial Welcome Message from ORCA -->
+              <div class="chat-msg bot-msg copilot-welcome-msg" id="copilotWelcomeMsg">
+                <div class="msg-avatar">🤖</div>
+                <div class="msg-bubble">
+                  <span class="msg-sender">ORCA</span>
+                  <p>
+                    👋 <strong>Welcome to ORCA Marine Copilot!</strong><br/>
+                    Enter your question below or tap a quick prompt to analyze fishing potential, wave safety, and A* navigation routes.
+                  </p>
+                  <small class="msg-time" id="copilotWelcomeTime">Ready</small>
+                </div>
+              </div>
+
+              <!-- User Message Bubble (Populated when user submits query) -->
+              <div class="chat-msg user-msg" id="copilotUserMsgWrapper" style="display: none;">
+                <div class="msg-avatar">👨‍✈️</div>
+                <div class="msg-bubble">
+                  <span class="msg-sender">YOU</span>
+                  <p id="copilotUserQueryText"></p>
+                  <small class="msg-time" id="copilotUserMsgTime">Just now</small>
+                </div>
+              </div>
+
+              <!-- Bot Response Bubble (Populated with AI answer) -->
+              <div class="chat-msg bot-msg" id="copilotBotMsgWrapper" style="display: none;">
+                <div class="msg-avatar">🤖</div>
+                <div class="msg-bubble">
+                  <span class="msg-sender">ORCA</span>
+                  <div id="copilotBotAnswerText" style="line-height: 1.5;"></div>
+                  <small class="msg-time" id="copilotBotAnswerTime">Just now</small>
+                </div>
+              </div>
+
+              <!-- Animated Multi-Agent Thinking Bubble during Analysis -->
+              <div class="chat-msg bot-msg copilot-loading-msg" id="copilotLoadingBubble" style="display: none;">
+                <div class="msg-avatar">🤖</div>
+                <div class="msg-bubble thinking-bubble">
+                  <div class="thinking-header-row">
+                    <span class="thinking-icon">⚡</span>
+                    <strong id="copilotThinkingText">Coordinating Marine Agents...</strong>
+                  </div>
+                  <div class="agent-thinking-dots">
+                    <span></span><span></span><span></span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- RECOMMENDED ZONE SNAPSHOT -->
+            <div class="copilot-zone-card glass-panel">
+              <div class="c-zone-header">
+                <div>
+                  <span class="c-tag">RECOMMENDED ZONE</span>
+                  <h4 id="copilotZoneName">Zone A</h4>
+                </div>
+                <div class="c-score-wrap">
+                  <small>PFZ SCORE</small>
+                  <strong id="copilotZoneScore">87%</strong>
+                </div>
+              </div>
+
+              <div class="c-zone-stats-row">
+                <div class="c-stat-box">
+                  <small>Safety Score</small>
+                  <strong class="text-green" id="copilotSafetyScore">94%</strong>
+                </div>
+                <div class="c-stat-box">
+                  <small>Distance</small>
+                  <strong id="copilotDistance">18.2 km</strong>
+                </div>
+              </div>
+
+              <button class="btn-copilot-action" id="copilotShowOnMapBtn" type="button">
+                Show on Map ➔
+              </button>
+            </div>
+
+            <!-- WHY THIS ZONE? -->
+            <div class="copilot-why-card glass-panel">
+              <h5 class="c-section-title">WHY THIS ZONE?</h5>
+              <div class="why-check-list" id="copilotWhyChecks">
+                <div class="why-item"><span class="chk">✓</span> High Chlorophyll Bloom</div>
+                <div class="why-item"><span class="chk">✓</span> Favourable SST (28.6 °C)</div>
+                <div class="why-item"><span class="chk">✓</span> Suitable Ocean Currents</div>
+                <div class="why-item"><span class="chk">✓</span> Moderate Wave Height (1.8 m)</div>
+                <div class="why-item"><span class="chk">✓</span> Outside Restricted Zones</div>
+                <div class="why-item"><span class="chk">✓</span> Low Weather Risk</div>
+              </div>
+            </div>
+
+            <!-- Copilot Action Buttons -->
+            <div class="copilot-actions-grid">
+              <button class="btn-c-chip" id="copilotPlanRouteBtn" type="button">Plan Safe Route</button>
+              <button class="btn-c-chip" id="copilotCheckWeatherBtn" type="button">Check Weather</button>
+              <button class="btn-c-chip" id="copilotOtherOptionsBtn" type="button">Other Options</button>
+            </div>
+          </div>
+
+          <!-- In-panel Input Row -->
+          <div class="copilot-drawer-footer">
+            <div class="copilot-input-row">
+              <input 
+                type="text" 
+                id="copilotInput" 
+                placeholder="Ask ORCA anything..." 
+                autocomplete="off"
+              />
+              <button class="copilot-send-btn" id="copilotSendBtn" type="button">➤</button>
+            </div>
+          </div>
+        </aside>
+      </div>
+
+      <!-- ===== BOTTOM INTELLIGENCE SECTION (AI Recommendation + Species + 7-Day Outlook) ===== -->
+      <section class="bottom-intelligence-grid">
+
+        <!-- 1. AI RECOMMENDATION CARD -->
+        <article class="intelligence-card glass-panel" id="aiRecommendationSection">
+          <div class="intel-header">
+            <div class="header-left">
+              <span class="intel-tag green">AI RECOMMENDATION</span>
+              <span class="agent-avatar-chip">🤖 ORCA + AGENTIC REASONER</span>
+            </div>
+            <div class="voice-action-group">
+              <button id="speakBtn" class="btn-voice" title="Listen to AI Voice Briefing" type="button">
+                <span class="speaker-icon">🔊</span> <span>Audio</span>
+              </button>
+              <button id="bubbleSpeakBtn" style="display:none;" type="button"></button>
+              <span class="mode-badge" id="modeChip">PRODUCTION</span>
+            </div>
+          </div>
+
+          <!-- Voice visualizer -->
+          <div class="audio-waveform-bars" id="audioWaveform">
+            <i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i>
+          </div>
+
+          <div class="ai-recommendation-content">
+            <div class="ai-text-column">
+              <p class="ai-summary-text" id="answer">
+                The area near Mumbai Harbour / Navgaon is highly suitable for fishing with favorable ocean currents and moderate wave clearances.
+              </p>
+
+              <!-- Condition Checklist Pills -->
+              <div class="intel-checks-grid">
+                <div class="check-item"><span class="chk-icon">✓</span> High Chlorophyll</div>
+                <div class="check-item"><span class="chk-icon">✓</span> Moderate SST</div>
+                <div class="check-item"><span class="chk-icon">✓</span> Favorable Currents</div>
+                <div class="check-item"><span class="chk-icon">✓</span> Outside Restricted Zone</div>
+                <div class="check-item"><span class="chk-icon">✓</span> Low Wave Height</div>
+                <div class="check-item"><span class="chk-icon">✓</span> Low Weather Risk</div>
+              </div>
+            </div>
+
+            <!-- Score Donut Ring -->
+            <div class="score-donut-block">
+              <div class="score-ring-container">
                 <svg viewBox="0 0 100 100" class="ring-svg">
                   <circle cx="50" cy="50" r="42" class="ring-bg"></circle>
                   <circle cx="50" cy="50" r="42" class="ring-progress" id="scoreRingProgress"></circle>
                 </svg>
-                <div class="ring-label">
-                  <strong id="overallScore">57</strong>
-                  <small>SCORE</small>
+                <div class="ring-center-content">
+                  <strong class="ring-score-num" id="overallScore">87</strong>
+                  <span class="ring-score-lbl">PFZ SCORE</span>
                 </div>
               </div>
-            </div>
-
-            <!-- AI Answer -->
-            <div class="ai-answer-box">
-              <div class="ai-answer-header">
-                <span class="agent-avatar-chip">🤖 GEMINI + AGENTIC REASONER</span>
-                <div style="display: flex; align-items: center; gap: 8px;">
-                  <button id="bubbleSpeakBtn" class="btn-sm" title="Listen to AI Briefing" type="button">
-                    <span class="speaker-icon">🔊</span> <span>Audio</span>
-                  </button>
-                  <span class="mode-badge" id="modeChip">PRODUCTION</span>
-                </div>
-              </div>
-              <p class="ai-answer-text" id="answer">
-                Analyzing oceanographic and satellite telemetry for Maharashtra coastal region...
-              </p>
             </div>
           </div>
 
-          <!-- Score Breakdown Cards (iPhone-style) -->
-          <div class="score-bars-grid">
-            <div class="score-bar-item" data-type="fishing">
-              <div class="bar-label">
-                <span class="bar-label-text">🎣 Fishing Potential</span>
-                <div class="bar-score-badge fishing-color">
-                  <strong id="fishingScore">--</strong><span class="score-max">/100</span>
-                </div>
+          <!-- Sub-score progress bars -->
+          <div class="score-sub-bars">
+            <div class="sub-bar-item">
+              <div class="bar-header">
+                <span>🎣 Fishing Potential</span>
+                <strong id="fishingScore">85</strong>
               </div>
-              <div class="bar-track">
-                <em id="fishingBar" style="width: 0%"></em>
-                <span class="bar-glow"></span>
-              </div>
-              <p class="bar-hint">Higher = better fish availability in this zone</p>
+              <div class="bar-track"><em id="fishingBar" style="width: 85%;"></em></div>
             </div>
-            <div class="score-bar-item" data-type="safety">
-              <div class="bar-label">
-                <span class="bar-label-text">🛡️ Sea-State Safety</span>
-                <div class="bar-score-badge safety-color">
-                  <strong id="safetyScore">--</strong><span class="score-max">/100</span>
-                </div>
+            <div class="sub-bar-item">
+              <div class="bar-header">
+                <span>🛡️ Sea-State Safety</span>
+                <strong id="safetyScore">92</strong>
               </div>
-              <div class="bar-track bar-safety">
-                <em id="safetyBar" style="width: 0%"></em>
-                <span class="bar-glow"></span>
-              </div>
-              <p class="bar-hint">Higher = calmer seas, safer conditions</p>
+              <div class="bar-track"><em id="safetyBar" style="width: 92%;"></em></div>
             </div>
-            <div class="score-bar-item" data-type="confidence">
-              <div class="bar-label">
-                <span class="bar-label-text">📊 Data Confidence</span>
-                <div class="bar-score-badge confidence-color">
-                  <strong id="dataScore">--</strong><span class="score-max">/100</span>
-                </div>
+            <div class="sub-bar-item">
+              <div class="bar-header">
+                <span>📊 Data Confidence</span>
+                <strong id="dataScore">90</strong>
               </div>
-              <div class="bar-track bar-confidence">
-                <em id="dataBar" style="width: 0%"></em>
-                <span class="bar-glow"></span>
-              </div>
-              <p class="bar-hint">Higher = more reliable satellite data</p>
+              <div class="bar-track"><em id="dataBar" style="width: 90%;"></em></div>
             </div>
+          </div>
+
+          <div class="intel-card-footer">
+            <button class="btn-why-zone" id="whyZoneBtn" type="button">
+              Why this zone? ➔
+            </button>
+            <small class="intel-source-note" id="sourceLine">Open-Meteo & Copernicus · Live Marine Stream</small>
           </div>
         </article>
 
-        <!-- RIGHT: Weather & Marine Safety -->
-        <article class="section-card weather-card">
-          <div class="section-header">
-            <div>
-              <span class="section-tag tag-red">MARINE WEATHER</span>
-              <h3>Sea Conditions</h3>
-            </div>
-            <span class="risk-badge high" id="riskBadge">HIGH RISK</span>
+        <!-- 2. SPECIES PROBABILITY CARD -->
+        <article class="intelligence-card glass-panel" id="speciesSection">
+          <div class="intel-header">
+            <span class="intel-tag blue">SPECIES PROBABILITY</span>
+            <span class="intel-sub-tag">Regional Yield Index</span>
           </div>
 
-          <!-- Wave Height Hero -->
-          <div class="wave-hero">
-            <div class="wave-graphic">
-              <svg viewBox="0 0 100 40" class="wave-svg">
-                <path d="M0 20 Q 25 5, 50 20 T 100 20 L 100 40 L 0 40 Z" class="wave-path-1"></path>
-                <path d="M0 25 Q 25 10, 50 25 T 100 25 L 100 40 L 0 40 Z" class="wave-path-2"></path>
+          <div class="species-list-container">
+            <div class="species-row">
+              <div class="species-info">
+                <span class="species-icon">🐟</span>
+                <span class="species-name">Oil Sardine</span>
+              </div>
+              <div class="species-bar-wrap">
+                <div class="species-bar-track">
+                  <div class="species-bar-fill fill-green" id="speciesSardineBar" style="width: 72%;"></div>
+                </div>
+                <span class="species-percent" id="speciesSardineVal">72%</span>
+              </div>
+            </div>
+
+            <div class="species-row">
+              <div class="species-info">
+                <span class="species-icon">🐟</span>
+                <span class="species-name">Mackerel</span>
+              </div>
+              <div class="species-bar-wrap">
+                <div class="species-bar-track">
+                  <div class="species-bar-fill fill-teal" id="speciesMackerelBar" style="width: 65%;"></div>
+                </div>
+                <span class="species-percent" id="speciesMackerelVal">65%</span>
+              </div>
+            </div>
+
+            <div class="species-row">
+              <div class="species-info">
+                <span class="species-icon">🐟</span>
+                <span class="species-name">Tuna</span>
+              </div>
+              <div class="species-bar-wrap">
+                <div class="species-bar-track">
+                  <div class="species-bar-fill fill-cyan" id="speciesTunaBar" style="width: 48%;"></div>
+                </div>
+                <span class="species-percent" id="speciesTunaVal">48%</span>
+              </div>
+            </div>
+
+            <div class="species-row">
+              <div class="species-info">
+                <span class="species-icon">🐟</span>
+                <span class="species-name">Pomfret</span>
+              </div>
+              <div class="species-bar-wrap">
+                <div class="species-bar-track">
+                  <div class="species-bar-fill fill-blue" id="speciesPomfretBar" style="width: 35%;"></div>
+                </div>
+                <span class="species-percent" id="speciesPomfretVal">35%</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="species-footer">
+            <button class="btn-outline-wide" id="btnViewAllSpecies" type="button">
+              View All Species
+            </button>
+          </div>
+        </article>
+
+        <!-- 3. 7-DAY OUTLOOK CARD -->
+        <article class="intelligence-card glass-panel" id="weatherOutlookSection">
+          <div class="intel-header">
+            <span class="intel-tag amber">7 DAY OUTLOOK</span>
+            <div class="chart-legends">
+              <span class="c-legend cyan"><i class="c-line-cyan"></i> SST (°C)</span>
+              <span class="c-legend green"><i class="c-line-green"></i> Wave (m)</span>
+            </div>
+          </div>
+
+          <!-- Day Icons Row -->
+          <div class="forecast-days-row" id="forecastDaysRow">
+            <div class="f-day-col"><span class="f-day">SAT</span><span class="f-ico">☀️</span></div>
+            <div class="f-day-col"><span class="f-day">SUN</span><span class="f-ico">☀️</span></div>
+            <div class="f-day-col"><span class="f-day">MON</span><span class="f-ico">⛅</span></div>
+            <div class="f-day-col"><span class="f-day">TUE</span><span class="f-ico">☀️</span></div>
+            <div class="f-day-col"><span class="f-day">WED</span><span class="f-ico">⛅</span></div>
+            <div class="f-day-col"><span class="f-day">THU</span><span class="f-ico">🌧️</span></div>
+            <div class="f-day-col"><span class="f-day">FRI</span><span class="f-ico">🌧️</span></div>
+          </div>
+
+          <!-- Interactive Trend Canvas / SVG Graph -->
+          <div class="trend-graph-container">
+            <div class="y-axis-labels">
+              <span>30°C</span>
+              <span>25°C</span>
+              <span>20°C</span>
+            </div>
+            <div class="graph-svg-wrap">
+              <svg viewBox="0 0 350 70" class="forecast-svg" preserveAspectRatio="none">
+                <!-- SST Line (Cyan) -->
+                <path d="M 15,35 Q 60,42 115,28 T 230,30 T 335,26" fill="none" stroke="#38bdf8" stroke-width="2.5" class="forecast-path-sst" />
+                <!-- Wave Line (Green) -->
+                <path d="M 15,50 Q 60,45 115,48 T 230,42 T 335,46" fill="none" stroke="#4ade80" stroke-width="2.5" class="forecast-path-wave" />
+                
+                <!-- SST Nodes -->
+                <circle cx="15" cy="35" r="3.5" fill="#38bdf8" />
+                <circle cx="68" cy="40" r="3.5" fill="#38bdf8" />
+                <circle cx="122" cy="28" r="3.5" fill="#38bdf8" />
+                <circle cx="175" cy="32" r="3.5" fill="#38bdf8" />
+                <circle cx="228" cy="30" r="3.5" fill="#38bdf8" />
+                <circle cx="282" cy="27" r="3.5" fill="#38bdf8" />
+                <circle cx="335" cy="26" r="3.5" fill="#38bdf8" />
+
+                <!-- Wave Nodes -->
+                <circle cx="15" cy="50" r="3.5" fill="#4ade80" />
+                <circle cx="68" cy="46" r="3.5" fill="#4ade80" />
+                <circle cx="122" cy="48" r="3.5" fill="#4ade80" />
+                <circle cx="175" cy="44" r="3.5" fill="#4ade80" />
+                <circle cx="228" cy="42" r="3.5" fill="#4ade80" />
+                <circle cx="282" cy="45" r="3.5" fill="#4ade80" />
+                <circle cx="335" cy="46" r="3.5" fill="#4ade80" />
               </svg>
             </div>
-            <div class="wave-digits">
-              <strong id="waveValue">-- m</strong>
-              <span>SIGNIFICANT WAVE HEIGHT</span>
-            </div>
           </div>
 
-          <!-- Telemetry Metrics Grid -->
-          <div class="weather-metrics-grid">
-            <div class="metric-tile">
-              <span class="metric-icon">💨</span>
-              <div class="metric-data"><span id="hazardWindVal">-- m/s</span><small>Wind Speed</small></div>
-            </div>
-            <div class="metric-tile">
-              <span class="metric-icon">🌊</span>
-              <div class="metric-data"><span id="hazardSwellVal">-- m</span><small>Swell Height</small></div>
-            </div>
-            <div class="metric-tile">
-              <span class="metric-icon">🧭</span>
-              <div class="metric-data"><span id="hazardCurrentVal">-- m/s</span><small>Surface Current</small></div>
-            </div>
-            <div class="metric-tile">
-              <span class="metric-icon">⚠️</span>
-              <div class="metric-data"><span id="hazardReasonVal">Evaluating live conditions...</span><small>Safety Clearance</small></div>
-            </div>
-          </div>
-
-          <!-- Topbar Telemetry (hidden, used by app.js) -->
-          <span id="topbarSST" style="display:none;">28.2°C</span>
-          <span id="topbarWave" style="display:none;">1.5m</span>
-
-          <div class="card-footer">
-            <span class="source-text" id="sourceLine">Open-Meteo & Copernicus · Live Marine Stream</span>
+          <div class="outlook-footer">
+            <span class="outlook-validity">Marine Weather Model · Valid 7 Days</span>
           </div>
         </article>
       </section>
 
-      <!-- SECTION 3: Full-Width Interactive Map -->
-      <section class="section-card map-section" id="map">
-        <div class="section-header">
-          <div>
-            <span class="section-tag tag-blue">INTERACTIVE MAP</span>
-            <h3>Arabian Sea — Maharashtra Coastal Radar <small>(Click ocean to re-center origin)</small></h3>
-          </div>
-          <div class="map-legend">
-            <span class="legend-item"><i class="dot dot-white"></i> Vessel Origin</span>
-            <span class="legend-item"><i class="dot dot-blue"></i> Best PFZ</span>
-            <span class="legend-item"><i class="dot dot-amber"></i> Candidate Zones</span>
-            <span class="legend-item"><i class="dot dot-red"></i> Restricted CZMP</span>
-          </div>
+      <!-- ===== DATA SOURCES BADGE STRIP ===== -->
+      <section class="data-sources-strip glass-panel">
+        <div class="sources-label-col">
+          <strong>DATA SOURCES</strong>
         </div>
-
-        <div id="leafletMap" class="map-container" aria-label="Interactive WebGIS Ocean Map"></div>
-
-        <!-- Route Info Bar -->
-        <div class="route-bar" id="routeBanner">
-          <div class="route-info">
-            <span class="route-icon">🚢</span>
-            <div>
-              <strong>Safe Navigation Route (A* Corridor)</strong>
-              <p id="routeHazards">Avoiding shallow reefs, port channels & security geofences</p>
+        <div class="sources-badges-row">
+          <div class="source-badge">
+            <span class="source-icon">🛰️</span>
+            <div class="source-text">
+              <strong>ISRO / MOSDAC</strong>
+              <small>Satellite Data</small>
             </div>
           </div>
-          <div class="route-stats">
-            <div class="stat">
-              <span class="stat-value" id="routeDistance">53.4 km</span>
-              <span class="stat-label">DISTANCE</span>
+          <div class="source-badge">
+            <span class="source-icon">🌊</span>
+            <div class="source-text">
+              <strong>INCOIS</strong>
+              <small>Ocean Data</small>
             </div>
-            <div class="stat">
-              <span class="stat-value" id="routeDuration">3.0 hrs</span>
-              <span class="stat-label">CRUISING TIME</span>
+          </div>
+          <div class="source-badge">
+            <span class="source-icon">🌧️</span>
+            <div class="source-text">
+              <strong>IMD</strong>
+              <small>Weather Data</small>
+            </div>
+          </div>
+          <div class="source-badge">
+            <span class="source-icon">🐟</span>
+            <div class="source-text">
+              <strong>Fisheries Dept.</strong>
+              <small>Fisheries Data</small>
+            </div>
+          </div>
+          <div class="source-badge">
+            <span class="source-icon">⚓</span>
+            <div class="source-text">
+              <strong>Custom Sensors</strong>
+              <small>Real-time Data</small>
             </div>
           </div>
         </div>
       </section>
 
-      <!-- SECTION 4: Evidence & Trace (2-column) -->
-      <section class="two-col-grid" id="lower-deck">
-
+      <!-- ===== EVIDENCE & TRACE ACCORDIONS (Preserved for Data Provenance) ===== -->
+      <section class="evidence-trace-grid" id="evidence">
         <!-- Evidence Ledger -->
-        <article class="section-card" id="evidence">
+        <article class="section-card glass-panel" id="evidenceSection">
           <div class="section-header">
             <div>
               <span class="section-tag">DATA PROVENANCE</span>
@@ -368,7 +1126,7 @@
         </article>
 
         <!-- Reasoning Trace -->
-        <article class="section-card" id="trace">
+        <article class="section-card glass-panel" id="trace">
           <div class="section-header">
             <div>
               <span class="section-tag tag-purple">AGENT TRACE</span>
@@ -383,7 +1141,7 @@
         </article>
       </section>
 
-      <!-- System Status Footer -->
+      <!-- Page Status Footer -->
       <footer class="page-footer">
         <div class="footer-status">
           <span class="pulse-dot"></span>
@@ -392,10 +1150,80 @@
       </footer>
     </main>
 
+    <!-- ===== PROMINENT, ENLARGED BOTTOM "ASK ORCA" COMMAND CENTER ===== -->
+    <div class="ask-orca-command-bar prominent-ask-bar" id="askOrcaCommandBar">
+      <div class="command-bar-inner">
+        <!-- Left: ASK ORCA Bot Button -->
+        <div class="ask-orca-brand-badge">
+          <span class="bot-icon">🤖</span>
+          <div class="ask-brand-text">
+            <strong>ASK ORCA</strong>
+            <small>AI Marine Copilot</small>
+          </div>
+        </div>
 
+        <!-- Center: Natural Language Input (Enlarged & Clear) -->
+        <div class="command-input-wrap large-input-wrap">
+          <span class="search-lens-icon">⚡</span>
+          <input 
+            type="text" 
+            id="query" 
+            placeholder="💬 Enter your question here (e.g. Best fishing zone near Mumbai, wave safety tomorrow...)" 
+            autocomplete="off"
+            aria-label="Ask ORCA query"
+          />
+          <button id="micBtn" class="btn-cmd-mic" title="Voice Input (Speech-to-Text)" type="button">
+            <span class="mic-icon">🎙️</span> <span class="mic-label">Speak</span>
+          </button>
+          <button id="askBtn" class="btn-cmd-send large-send" type="button" title="Send Analysis Query">
+            <span>Analyze ➤</span>
+          </button>
+        </div>
+
+        <!-- Right: Popular Query Suggestion Chips -->
+        <div class="popular-queries-wrap">
+          <span class="pop-label">Quick Prompts:</span>
+          <div class="quick-chips">
+            <button class="chip" data-query="Where is the nearest Potential Fishing Zone to me today?">📍 Best fishing zone</button>
+            <button class="chip" data-query="Plan a safe navigation route to Goa avoiding restricted zones.">🧭 Safe route to Goa</button>
+            <button class="chip" data-query="What is the weather and sea-state forecast for tomorrow?">☁️ Weather tomorrow</button>
+            <button class="chip" data-query="Which fishing zone is worst or riskiest to avoid?">⚠️ Riskiest zones</button>
+          </div>
+        </div>
+      </div>
+      <p id="analysisStatus" class="command-status-text" style="display:none;"></p>
+    </div>
+
+    <!-- ===== MOBILE BOTTOM NAVIGATION BAR ===== -->
+    <nav class="mobile-bottom-nav" id="mobileBottomNav">
+      <a href="#dashboard" class="m-nav-item active" data-tab="dashboard">
+        <span class="m-nav-icon">📊</span>
+        <span class="m-nav-label">Dashboard</span>
+      </a>
+      <a href="#zones" class="m-nav-item" data-tab="zones">
+        <span class="m-nav-icon">🐟</span>
+        <span class="m-nav-label">Zones</span>
+      </a>
+      <a href="#routes" class="m-nav-item" data-tab="routes">
+        <span class="m-nav-icon">🧭</span>
+        <span class="m-nav-label">Routes</span>
+      </a>
+      <a href="#alerts" class="m-nav-item" data-tab="alerts">
+        <span class="m-nav-icon">⚠️</span>
+        <span class="m-nav-label">Alerts</span>
+      </a>
+      <button class="m-nav-item m-nav-copilot" id="mobileCopilotBtn" type="button">
+        <span class="m-nav-icon">🤖</span>
+        <span class="m-nav-label">Copilot</span>
+      </button>
+      <button class="m-nav-item" id="mobileMoreBtn" type="button">
+        <span class="m-nav-icon">☰</span>
+        <span class="m-nav-label">More</span>
+      </button>
+    </nav>
 
     <!-- Scripts -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <script src="./app.js?v=20260829-mobile-menu-fix"></script>
+    <script src="./app.js?v=20260830-command-v2"></script>
   </body>
 </html>
