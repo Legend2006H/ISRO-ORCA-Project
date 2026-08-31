@@ -41,7 +41,7 @@ REM 3. Activate virtual environment
 call venv\Scripts\activate.bat
 
 REM 4. Check if required packages are installed
-%PYTHON_CMD% -c "import fastapi, uvicorn, pandas, pydantic, xlrd, httpx" >nul 2>nul
+%PYTHON_CMD% -c "import fastapi, uvicorn, pandas, pydantic, xlrd, httpx, multipart" >nul 2>nul
 if %errorlevel% neq 0 (
     echo [INFO] Required dependencies not detected. Installing requirements...
     pip install -r requirements.txt
