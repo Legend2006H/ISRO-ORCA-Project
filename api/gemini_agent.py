@@ -10,7 +10,7 @@ from typing import Any
 
 
 def load_env_file():
-    """Load key-value pairs from .env file into os.environ if present."""
+    """Load key-value pairs from .env file into os.environ if present, without overwriting live host env vars."""
     root = Path(__file__).resolve().parents[1]
     env_paths = [root / ".env", Path.cwd() / ".env", root.parent / ".env"]
     for path in env_paths:
@@ -20,8 +20,10 @@ def load_env_file():
                     line = line.strip()
                     if line and not line.startswith("#") and "=" in line:
                         k, v = line.split("=", 1)
-                        k, v = k.strip(), v.strip().strip("'\"")
-                        if k:
+                        k = k.strip()
+                        v = v.strip().strip("'\"").strip()
+                        # Do not overwrite live environment variables already injected by Render / host OS
+                        if k and k not in os.environ:
                             os.environ[k] = v
             except Exception:
                 pass
@@ -34,14 +36,18 @@ DEFAULT_GEMINI_KEY = "AQ.Ab8RN6IFPTGbyD5GOIwhy-rukk-ZiU8FK3jpQEhRLpdZY53-AA"
 
 
 def get_gemini_api_key(passed_key: str | None = None) -> str:
-    """Retrieve active Gemini API key from parameters, env, .env file, or built-in default."""
+    """Retrieve active Gemini API key from parameters, live environment (Render/Docker), .env file, or built-in default."""
     load_env_file()
-    candidate = (passed_key or "").strip()
+    candidate = (passed_key or "").strip().strip("'\"").strip()
     if candidate and not ("YOUR_KEY" in candidate or candidate == "YOUR_GEMINI_API_KEY"):
         return candidate
-    env_key = os.getenv("GEMINI_API_KEY", "").strip()
-    if env_key and not ("YOUR_KEY" in env_key or env_key == "YOUR_GEMINI_API_KEY"):
-        return env_key
+
+    # Check common environment variable aliases used in Render, Docker, and cloud hosting
+    for var_name in ("GEMINI_API_KEY", "GOOGLE_API_KEY", "GOOGLE_GEMINI_API_KEY", "GEMINI_KEY", "API_KEY"):
+        env_val = os.getenv(var_name, "").strip().strip("'\"").strip()
+        if env_val and not ("YOUR_KEY" in env_val or env_val == "YOUR_GEMINI_API_KEY"):
+            return env_val
+
     return DEFAULT_GEMINI_KEY
 
 
@@ -64,12 +70,16 @@ def generate_marine_synthesis(
     lang_names = {"en": "English", "hi": "Hindi", "mr": "Marathi"}
     lang_name = lang_names.get(language, "English")
 
+    # Production-tested Google Gemini models available on Generative Language API
     models_to_try = [
-        os.getenv("GEMINI_MODEL", "gemini-3.5-flash-lite"),
+        os.getenv("GEMINI_MODEL", "").strip(),
+        "gemini-2.0-flash",
+        "gemini-1.5-flash",
+        "gemini-2.5-flash",
+        "gemini-2.0-flash-lite",
+        "gemini-1.5-pro",
         "gemini-3.5-flash-lite",
         "gemini-3.1-flash-lite",
-        "gemini-3.5-flash",
-        "gemini-3.6-flash",
     ]
     seen_models: set = set()
     models = [m for m in models_to_try if m and not (m in seen_models or seen_models.add(m))]

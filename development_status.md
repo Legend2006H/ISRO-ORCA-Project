@@ -41,7 +41,7 @@ This document outlines the current state of the ORCA Marine Intelligence Project
 - **Agent Fallback System**: The `offline_service.py` manages the deterministic calculation pipeline and acts as a cached-data decision service if live fetching fails.
 
 ### 3. Environment & Configuration
-- **Built-in Gemini Neural Agent**: Configured with a default built-in API key and `.env` loader (`GEMINI_API_KEY`), running `gemini-3.5-flash-lite` with ultra-fast multi-model fallback (`gemini-3.1-flash-lite`, `gemini-3.5-flash`, `gemini-3.6-flash`). The frontend operates seamlessly without ever prompting the user for an API key. Provides real-time conversational LLM reasoning that gracefully interprets typos, broken grammar, phonetic phrasing, and glitchy inputs.
+- **Built-in Gemini Neural Agent**: Configured to seamlessly read live host environment variables (Render / Docker / Railway via `GEMINI_API_KEY`, `GOOGLE_API_KEY`, `GEMINI_KEY`, etc.) as well as local `.env` files. Equipped with automated multi-model fallback (`gemini-2.0-flash`, `gemini-1.5-flash`, `gemini-2.5-flash`, `gemini-2.0-flash-lite`, `gemini-1.5-pro`) and default key failover. Operates out-of-the-box with zero client-side API key configuration required.
 
 ## How to Run Locally
 
