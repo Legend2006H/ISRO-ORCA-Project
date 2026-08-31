@@ -13,6 +13,7 @@ from .offline_service import (
     get_all_pfz_geojson,
 )
 from .routing import plan_safe_route
+from .voice import voice_router
 
 from .gemini_agent import get_gemini_api_key, load_env_file
 
@@ -43,6 +44,7 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+app.include_router(voice_router)
 sessions: dict[str, list[dict[str, str]]] = {}
 
 

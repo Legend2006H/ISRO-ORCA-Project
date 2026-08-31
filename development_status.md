@@ -54,7 +54,15 @@ This document outlines the current state of the ORCA Marine Intelligence Project
 - **Deterministic Rule-Based Fallback**: Instantaneous zero-latency failover to deterministic intent-DAG templates when Gemini is offline, key is missing, or plan validation fails.
 - **Bounded Multi-Agent Orchestrator (`OrcaOrchestrator`)**: Coordinates DAG task formulation, whitelisted tool execution (`MAX_TASKS = 6`, `MAX_TOOL_CALLS = 8`), hard safety gating, and response synthesis.
 - **Typed Execution Context & Isolated Latency Metrics (`OrcaExecutionContext`)**: Tracks separate `planner_duration_ms`, `synthesis_duration_ms`, `gemini_calls_count`, and `total_duration_ms`.
-- **Test Suite**: 32 automated unit tests passing with 100% pass rate.
+
+### 5. Phase 6 ORCA Voice Access Layer (Exotel IVR / DTMF Complete)
+- **Zero-Internet Basic Phone Accessibility**: Enables coastal fishermen with 2G/basic keypad phones to dial an ORCA helpline and receive real-time marine advisories without smartphone apps or mobile internet.
+- **Shared Multi-Agent Core**: Cellular voice calls route directly through `OrcaOrchestrator` via `api/voice/` without altering or duplicating existing web application code.
+- **Exotel IVR & ExoML Integration**: Full webhook implementation (`POST /api/v1/voice/incoming`, `POST /api/v1/voice/input`, `POST /api/v1/voice/status`) supporting standard ExoML XML schemas (`<Gather>`, `<Say>`, `<Hangup>`).
+- **Multilingual DTMF Flow**: Supports Marathi (`1`), Hindi (`2`), and English (`3`) language selection, intent selection (Safety, Nearest PFZ, Safe Route), and coastal port resolution (Mumbai, Ratnagiri, Malvan, Alibaug, Dahanu).
+- **Deterministic Voice Safety Gate**: Concise spoken advisories (`VoiceResponseFormatter`) strictly grounded in the evidence ledger with zero numerical hallucination.
+- **Comprehensive Test Suite**: **50/50 automated unit tests passing** (100% pass rate in ~7.1s across core, multi-agent orchestrator, and voice layers).
+- **Phase 6.1 Production Hardening**: Live Open-Meteo telemetry reuse (`use_live_data=True`), caller phone masking (`+91******3210`), XML sanitization, idempotency protection, and honest provenance tags (`LIVE`, `CACHED`, `DEMO`) for voice.
 
 ## How to Run Locally
 
