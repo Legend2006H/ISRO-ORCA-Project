@@ -23,6 +23,15 @@ class VesselType(str, Enum):
 
 
 class VesselProfile(BaseModel):
+    """Vessel operational configuration and safety thresholds.
+    
+    IMPORTANT AUDIT NOTE:
+    Threshold parameters (max_wave_m, max_wind_ms, range_km) represent Category B:
+    Configurable Prototype Operational Assumptions for decision-support demonstration.
+    Production deployments must calibrate these parameters against authoritative maritime
+    guidance (e.g. Directorate General of Shipping, IMO, INCOIS) and vessel-specific
+    stability book certifications.
+    """
     name: str = "Small Traditional Boat"
     vessel_type: VesselType = VesselType.SMALL_BOAT
     beam_m: float = 3.5
@@ -32,6 +41,7 @@ class VesselProfile(BaseModel):
     range_km: float = 80.0
 
 
+# Prototype operational profiles configured for demonstration decision support
 VESSEL_PROFILES: dict[str, VesselProfile] = {
     "small_boat": VesselProfile(
         name="Small Traditional Boat",

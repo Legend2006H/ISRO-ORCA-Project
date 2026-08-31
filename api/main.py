@@ -16,16 +16,33 @@ from .routing import plan_safe_route
 
 from .gemini_agent import get_gemini_api_key, load_env_file
 
+import os
+
 load_env_file()
+
+cors_origins_raw = os.getenv("CORS_ORIGINS", "").strip()
+if cors_origins_raw:
+    allowed_origins = [orig.strip() for orig in cors_origins_raw.split(",") if orig.strip()]
+else:
+    allowed_origins = [
+        "http://127.0.0.1:8000",
+        "http://localhost:8000",
+        "http://127.0.0.1:3000",
+        "http://localhost:3000",
+        "http://127.0.0.1:5173",
+        "http://localhost:5173",
+    ]
+
+allow_creds = "*" not in allowed_origins
 
 app = FastAPI(title="ORCA API", version="2.0.0", description="Production-grade AI Marine Intelligence Platform")
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
+    allow_origins=allowed_origins,
+    allow_credentials=allow_creds,
     allow_methods=["*"],
     allow_headers=["*"],
-    )
+)
 sessions: dict[str, list[dict[str, str]]] = {}
 
 

@@ -365,9 +365,9 @@ def _answer(
 ) -> str:
     alt_name = alt.name if alt else "Zone B"
     alt_dist = alt.distance_km if alt else 0.0
-    worst_name = worst.name if worst else top.name
-    worst_dist = worst.distance_km if worst else top.distance_km
-    worst_score = worst.overall_score if worst else top.overall_score
+    worst_name = worst.name if worst else (top.name if top else "Zone")
+    worst_dist = worst.distance_km if worst else (top.distance_km if top else 0.0)
+    worst_score = getattr(worst, "overall_score", getattr(top, "overall_score", 0.0))
 
     if intent == "worst":
         if blocked:
@@ -453,226 +453,14 @@ def analyse(
     use_live_data: bool = False,
     api_key: str | None = None,
 ) -> dict:
-    """Create one explainable response with deterministic risk scoring, A* navigation, and evidence attachment."""
-    now = datetime.now(UTC)
-    validity, pfz = _latest_pfz()
-    vessel = VESSEL_PROFILES.get(vessel_type, VESSEL_PROFILES["small_boat"])
-
-    # Extract location entity from message if mentioned (e.g. Ratnagiri, Malvan, etc.)
-    extracted_loc = extract_location_from_text(message)
-    if extracted_loc is not None:
-        if location and location.lat and location.lon:
-            # If the user clicked coordinates near this named region (within ~100km / 0.9 deg), preserve exact clicked point
-            if math.hypot(location.lat - extracted_loc.lat, location.lon - extracted_loc.lon) < 0.9:
-                effective_location = Location(lat=location.lat, lon=location.lon, name=location.name or extracted_loc.name)
-            else:
-                effective_location = extracted_loc
-        else:
-            effective_location = extracted_loc
-    else:
-        effective_location = location
-    origin_name = effective_location.name or f"Point ({effective_location.lat:.2f}°N, {effective_location.lon:.2f}°E)"
-
-    # Decide between live feed and cached observations
-    source_mode = SourceMode.CACHED
-    if use_live_data:
-        live_feed = fetch_live_marine_conditions(effective_location)
-        source_mode = SourceMode.LIVE if live_feed.get("source_mode") == "LIVE" else SourceMode.CACHED
-        obs_list = live_feed.get("observations", [])
-        observations = {item["parameter"]: item for item in obs_list}
-        source_name = live_feed.get("source_name", "Open-Meteo Live Marine Feed")
-        retrieved = now
-        ocean_location = effective_location
-    else:
-        ocean = _ocean_cache()
-        retrieved = _time(ocean.get("retrieved_at"), now)
-        point = ocean["location"]
-        ocean_location = Location(lat=float(point["latitude"]), lon=float(point["longitude"]))
-        observations = {item["parameter"]: item for item in ocean["observations"]}
-        source_name = ocean.get("source_name", "INCOIS OSF cache")
-
-    wave = float(observations.get("significant_wave_height", {}).get("value", 1.4))
-    wind = float(observations.get("wind_speed", {}).get("value", 6.0))
-    swell = float(observations.get("swell_height", {}).get("value", 0.8))
-    current = float(observations.get("surface_current_speed", {}).get("value", 0.2))
-    critical = wave > vessel.max_wave_m or wind > vessel.max_wind_ms
-
-    valid_time = _time(observations.get("significant_wave_height", {}).get("valid_time"), retrieved)
-    evidence = [Evidence(
-        id="pfz_advisory",
-        source="INCOIS PFZ advisory",
-        parameter="pfz_validity",
-        value=validity,
-        unit="",
-        location=effective_location,
-        valid_time=valid_time,
-        issued_time=retrieved,
-        retrieved_at=retrieved,
-        source_mode=source_mode,
-        quality="VALIDATED_FILE",
-    )]
-
-    for parameter, item in observations.items():
-        evidence.append(Evidence(
-            id=f"osf_{parameter}",
-            source=source_name,
-            parameter=parameter,
-            value=item["value"],
-            unit=item.get("unit", ""),
-            location=ocean_location,
-            valid_time=_time(item.get("valid_time"), retrieved),
-            issued_time=retrieved,
-            retrieved_at=retrieved,
-            source_mode=source_mode,
-            quality="LIVE_FEED" if source_mode == SourceMode.LIVE else "VALIDATED_CACHE",
-        ))
-
-    boundary_file = DATA / "boundaries" / "restricted_zones.csv"
-    if boundary_file.exists():
-        for zone in read_restricted_zones_csv(boundary_file):
-            evidence.append(Evidence(
-                id=f"boundary_{len(evidence)}",
-                source="ORCA boundary inventory",
-                parameter="geofence_context",
-                value=zone.enforcement,
-                unit="",
-                location=Location(lat=zone.latitude, lon=zone.longitude),
-                valid_time=now,
-                issued_time=now,
-                retrieved_at=now,
-                source_mode=SourceMode.CACHED,
-                quality="CONTEXT_ONLY" if zone.enforcement == "CONTEXT_ONLY" else "OFFICIAL_BOUNDARY",
-            ))
-
-    closest = sorted(pfz, key=lambda item: _distance_km(effective_location, Location(lat=item.latitude, lon=item.longitude)))[:5]
-
-    # --- Dynamic fishing sub-scores based on live/cached ocean telemetry ---
-    sst_raw = float(observations.get("sea_surface_temperature", {}).get("value", 28.0))
-    # SST score: peaks at 28°C for tropical Indian Ocean fishing, drops off outside 24-32 range
-    sst_base = max(20, 100 - 12.5 * abs(sst_raw - 28.0))
-    # Chlorophyll proxy: moderate currents + upwelling (cooler SST) boost productivity
-    chl_base = max(25, min(90, 50 + 15 * min(current, 0.5) / 0.5 + 10 * max(0, 28.5 - sst_raw)))
-    # Ocean context: calmer seas = better fishing context
-    ocean_ctx_base = max(20, min(95, 70 - 20 * (swell / 1.5) + 10 * (1.0 - min(current, 1.0))))
-
-    candidates = []
-    for number, item in enumerate(closest, 1):
-        target = Location(lat=item.latitude, lon=item.longitude)
-        distance = _distance_km(effective_location, target)
-        pfz_s, chloro_s, sst_s, ctx_s = compute_zone_fishing_metrics(item, observations, source_mode)
-        candidates.append(ZoneCandidate(
-            id=f"pfz_{number}",
-            name=f"PFZ near {item.coastal_reference}",
-            location=target,
-            distance_km=round(distance, 1),
-            pfz_score=pfz_s,
-            chlorophyll_score=chloro_s,
-            sst_score=sst_s,
-            ocean_context_score=ctx_s,
-            wave_safety=_score(wave, 0.8, vessel.max_wave_m),
-            wind_safety=_score(wind, 5.0, vessel.max_wind_ms),
-            swell_safety=_score(swell, 0.7, 1.5),
-            current_safety=_score(current, 0.3, 1.0),
-            hazard_clearance=15 if critical else 90,
-            accessibility_score=max(15, 100 - distance),
-            data_quality_score=90 if source_mode == SourceMode.LIVE else 68,
-            critical_hazard=critical,
-            evidence_ids=[entry.id for entry in evidence],
-        ))
-
-    ranked = rank_zones(candidates)
-    top = ranked[0]
-    alt = ranked[1] if len(ranked) > 1 else None
-    worst = ranked[-1] if ranked else None
-    intent = detect_intent(message)
-
-    # Calculate safe A* navigation route to recommended zone
-    route_info = plan_safe_route(effective_location, top.location, vessel_speed_kmh=vessel.cruising_speed_kmh)
-
-    trace = [
-        f"Planner: parsed intent '{intent}' for reference '{origin_name}' ({effective_location.lat:.2f}°N, {effective_location.lon:.2f}°E) with vessel '{vessel.name}'.",
-        f"PFZ agent: loaded validated PFZ advisory ({len(pfz)} candidate zones along Maharashtra/Konkan/Goa coast).",
-        f"Marine data agent: retrieved {source_mode.value} conditions (wave: {wave:.1f} m, wind: {wind:.1f} m/s, swell: {swell:.1f} m).",
-        f"GIS agent: calculated geodesic distances from {origin_name} and evaluated proximity to CZMP boundaries.",
-        f"Route engine: computed {route_info['distance_km']} km safe A* route ({route_info['estimated_duration_hours']} hrs cruising).",
-        f"Risk engine: compared wave height ({wave:.1f} m) with vessel limit ({vessel.max_wave_m} m) -> {'BLOCKED (HIGH RISK)' if critical else 'SAFE TO DEPART'}.",
-        f"Recommendation agent: synthesized {intent} decision with typed evidence ledger.",
-    ]
-
-    vessel_dict = {
-        "type": vessel.vessel_type.value,
-        "name": vessel.name,
-        "beam_m": vessel.beam_m,
-        "cruising_speed_kmh": vessel.cruising_speed_kmh,
-        "max_wave_m": vessel.max_wave_m,
-        "max_wind_ms": vessel.max_wind_ms,
-        "range_km": vessel.range_km,
-    }
-
-    safety_dict = {
-        "departure_allowed": not critical,
-        "wave_height_m": wave,
-        "wind_speed_ms": wind,
-        "swell_height_m": swell,
-        "current_speed_ms": current,
-        "reason": f"Wave height ({wave:.1f} m) exceeds configured {vessel.name} limit ({vessel.max_wave_m} m)." if critical else f"Sea conditions are within safe limits for {vessel.name}.",
-    }
-
-    origin_dict = {
-        "lat": effective_location.lat,
-        "lon": effective_location.lon,
-        "name": origin_name,
-    }
-
-    # Attempt Gemini neural synthesis; fallback to deterministic rules
-    final_answer = generate_marine_synthesis(
-        user_query=message,
+    """Execute ORCA multi-agent decision support pipeline via OrcaOrchestrator."""
+    from api.agents.orchestrator import OrcaOrchestrator
+    orchestrator = OrcaOrchestrator()
+    return orchestrator.run(
+        message=message,
+        location=location,
         language=language,
-        intent=intent,
-        vessel_profile=vessel_dict,
-        safety_assessment=safety_dict,
-        top_candidate=top.model_dump(mode="json"),
-        alternative_candidates=[item.model_dump(mode="json") for item in ranked[1:]],
-        worst_candidate=worst.model_dump(mode="json") if worst else None,
-        origin_location=origin_dict,
-        route_info=route_info,
+        vessel_type=vessel_type,
+        use_live_data=use_live_data,
         api_key=api_key,
     )
-
-    ai_provider = "GEMINI NEURAL AGENT"
-    if final_answer:
-        trace.append("Gemini agent: generated grounded conversational neural synthesis addressing specific user query.")
-    else:
-        ai_provider = "DETERMINISTIC GIS AGENT"
-        final_answer = _answer(
-            language,
-            intent,
-            critical,
-            top,
-            alt,
-            worst,
-            wave,
-            wind,
-            swell,
-            vessel.name,
-            vessel.max_wave_m,
-            origin_name=origin_name,
-        )
-
-    return {
-        "answer": final_answer,
-        "intent": intent,
-        "language": language,
-        "source_mode": source_mode.value,
-        "ai_provider": ai_provider,
-        "origin": origin_dict,
-        "recommendation": top.model_dump(mode="json"),
-        "alternatives": [item.model_dump(mode="json") for item in ranked[1:]],
-        "worst_zone": worst.model_dump(mode="json") if worst else None,
-        "evidence": [item.model_dump(mode="json") for item in evidence],
-        "trace": trace,
-        "vessel_profile": vessel_dict,
-        "route": route_info,
-        "safety": safety_dict,
-        "freshness": "Live real-time feed active." if source_mode == SourceMode.LIVE else "Cached data only: verify official advisories immediately before departure.",
-    }

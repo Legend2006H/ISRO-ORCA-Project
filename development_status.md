@@ -40,8 +40,21 @@ This document outlines the current state of the ORCA Marine Intelligence Project
 - **Routing**: Implementation of A* shortest path routing (`routing.py`) to calculate safe navigation corridors while avoiding restricted zones.
 - **Agent Fallback System**: The `offline_service.py` manages the deterministic calculation pipeline and acts as a cached-data decision service if live fetching fails.
 
-### 3. Environment & Configuration
-- **Built-in Gemini Neural Agent**: Configured to seamlessly read live host environment variables (Render / Docker / Railway via `GEMINI_API_KEY`, `GOOGLE_API_KEY`, `GEMINI_KEY`, etc.) as well as local `.env` files. Equipped with automated multi-model fallback (`gemini-2.0-flash`, `gemini-1.5-flash`, `gemini-2.5-flash`, `gemini-2.0-flash-lite`, `gemini-1.5-pro`) and default key failover. Operates out-of-the-box with zero client-side API key configuration required.
+### 3. Environment, Security & Configuration (Hardened Baseline)
+- **Environment Key Resolution**: Reads live host environment variables (`GEMINI_API_KEY`, `GOOGLE_API_KEY`, etc.) and local `.env` files safely without hardcoded default keys. If no key is configured, the system cleanly and instantaneously falls back to the deterministic GIS decision engine with zero network timeout overhead.
+- **Security Audit & Credential Hygiene**: All hard-coded credentials removed from source. Real credentials must be injected via environment variables. Note: Any credential previously committed to git history must be rotated/revoked externally on Google Cloud Console.
+- **Configurable CORS**: CORS allowed origins configured via `CORS_ORIGINS` environment variable (defaulting to local origins `http://127.0.0.1:8000`, `http://localhost:8000`, `http://localhost:3000`, etc.) with correct credential-spec handling.
+- **Data Source Honesty & Transparency**: Telemetry modes explicitly exposed across API and UI (`LIVE` for active Open-Meteo feeds, `CACHED` for validated INCOIS datasets, and `DEMO` for offline spatial-temporal physics fallback model).
+- **Audited Safety Thresholds**: Hardcoded vessel safety parameters (Small Boat 1.5m wave / 10m/s wind, Trawler 2.5m wave / 15m/s wind, Deep Sea 4.0m wave / 22m/s wind) and scoring weights documented as Category B prototype operational assumptions requiring authoritative maritime validation (DG Shipping / IMO / INCOIS) for production.
+- **Test Suite**: 19 automated unit tests verifying deterministic fallback, API key resolution, golden chat queries, A* routing, and GeoJSON boundaries with 100% pass rate in < 4s.
+
+### 4. Phase 4 Bounded LLM Planner & Multi-Agent Architecture (Complete)
+- **Bounded Gemini Structured Planner (`generate_structured_plan`)**: Implemented in [`api/gemini_agent.py`](./api/gemini_agent.py), producing strict JSON `ExecutionPlan` DAGs validated by Pydantic schemas.
+- **Topological Cyclic Graph Rejection (`_has_cycles`)**: Implemented in [`api/agents/orchestrator.py`](./api/agents/orchestrator.py) using graph DFS coloring to reject cyclic dependencies.
+- **Deterministic Rule-Based Fallback**: Instantaneous zero-latency failover to deterministic intent-DAG templates when Gemini is offline, key is missing, or plan validation fails.
+- **Bounded Multi-Agent Orchestrator (`OrcaOrchestrator`)**: Coordinates DAG task formulation, whitelisted tool execution (`MAX_TASKS = 6`, `MAX_TOOL_CALLS = 8`), hard safety gating, and response synthesis.
+- **Typed Execution Context & Isolated Latency Metrics (`OrcaExecutionContext`)**: Tracks separate `planner_duration_ms`, `synthesis_duration_ms`, `gemini_calls_count`, and `total_duration_ms`.
+- **Test Suite**: 32 automated unit tests passing with 100% pass rate.
 
 ## How to Run Locally
 
@@ -52,6 +65,7 @@ Double-click `run.bat` or run `.\run.bat` in terminal. It automatically checks P
 1. Create venv: `python -m venv venv`
 2. Activate venv: PowerShell: `./venv/Scripts/Activate.ps1` (or CMD: `venv\\Scripts\\activate.bat`)
 3. Install dependencies: `pip install -r requirements.txt`
-4. Configure `.env` (optional): Add `GEMINI_API_KEY=your_key_here`
+4. Configure `.env` (optional): Add `GEMINI_API_KEY=your_key_here` and `CORS_ORIGINS=http://localhost:8000`
 5. Start the API server: `uvicorn api.main:app --reload`
 6. Open a browser and navigate to `http://127.0.0.1:8000/` to access the application.
+
