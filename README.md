@@ -50,41 +50,58 @@ We created an intelligent decision-support platform that lets a fisherman simply
 
 ---
 
-## 🏗️ How It Works (Under the Hood)
+## 🏗️ How It Works (Multi-Agent Architecture)
 
-Here is a quick look at how ORCA processes a question step-by-step:
+ORCA implements a **Bounded Multi-Agent Orchestrator over Typed Deterministic Domain Tools** (ISRO PS 26176):
 
 ```mermaid
 flowchart TD
     A[👤 Fisherman asks in Hindi / Marathi / English] --> B[🎙️ WebGIS Dashboard]
-    B --> C[⚡ FastAPI Orchestrator]
+    B --> C[⚡ FastAPI /api/v1/chat]
+    C --> D[🧭 OrcaOrchestrator]
     
-    subgraph Data & Math ["🧮 100% Deterministic Engine (No AI Guesswork)"]
-        C --> D[🛰️ Read INCOIS PFZ Advisories & OSF Ocean Forecasts]
-        D --> E[🛡️ Check Wave & Wind Safety for Boat Type]
-        E --> F[🧭 A* Routing around Restricted Zones]
-        F --> G[📊 Score & Rank Best Fishing Candidates]
+    subgraph Planning ["🧠 Intent & Task Planning"]
+        D --> E{Gemini Key Active?}
+        E -->|Yes| F[🤖 Gemini Neural Planner: JSON DAG]
+        E -->|No / Offline| G[📋 Deterministic Rule-Based Fallback DAG]
+        F --> H[🛡️ Pydantic Plan & Cycle Validation]
+        G --> H
+    end
+
+    subgraph DeterministicTools ["🧮 Typed Deterministic Domain Tools"]
+        H --> I[📍 tool_resolve_coastal_entity]
+        H --> J[🌊 tool_fetch_ocean_telemetry]
+        H --> K[🚤 tool_evaluate_vessel_risk]
+        H --> L[🐟 tool_lookup_pfz_advisory]
+        H --> M[📊 tool_rank_fishing_zones]
+        H --> N[🧭 tool_calculate_safe_route]
+    end
+
+    subgraph SafetyAndEvidence ["🛡️ Safety Gate & Evidence Ledger"]
+        I & J & K & L & M & N --> O[🔒 Hard Deterministic Safety Gate]
+        O --> P[📋 Typed Evidence Ledger]
     end
     
-    subgraph AI Layer ["🤖 Explanation & Multilingual Speech"]
-        G --> H[🔍 Collect Verified Evidence]
-        H --> I[✨ Google Gemini Agent]
-        I --> J[🗣️ Generate Simple, Caring Multilingual Advice]
+    subgraph SynthesisLayer ["🗣️ Multilingual Synthesis"]
+        P --> Q[✨ Google Gemini Synthesis Agent]
+        Q -->|Failover| R[📝 Deterministic Multi-Language Templates]
     end
     
-    J --> B
-    G -.->|Draw Zones & Route on Map| B
+    Q --> S[💬 Conversational Guidance + Nav Corridor]
+    R --> S
+    S --> B
 ```
 
 ---
 
 ## 🛠️ Tech Stack We Used
 
-- **Frontend:** HTML5, Modern CSS (Glassmorphism "Cyber-Ocean" theme), Vanilla JS, **Leaflet.js** (WebGIS map).
-- **Backend:** **Python 3.10+**, **FastAPI**, Uvicorn, Pydantic.
-- **AI & Speech:** Google Gemini API (Natural language explanation & intent classification) + Web Speech API.
-- **GIS & Algorithms:** Custom **A\* Pathfinding** routing, Haversine spatial calculations, CZMP boundary geofencing.
-- **Data Ingestion:** Parsers for INCOIS `.xls` PFZ advisories, live/cached Ocean State Forecasts (OSF), and boundary JSON manifests.
+- **Frontend:** HTML5, Modern CSS (Glassmorphism "Cyber-Ocean" theme), Vanilla JS, **Leaflet.js** (WebGIS radar map).
+- **Backend:** **Python 3.10+**, **FastAPI**, Uvicorn, Pydantic v2.
+- **Agentic AI & Speech:** Google Gemini API (Structured task planning & multilingual conversational synthesis) + Web Speech API.
+- **GIS & Pathfinding:** Custom **A\* Grid Pathfinding** routing with Chaikin corner smoothing, Haversine geodesic calculations, CZMP boundary geofencing.
+- **Data Ingestion:** Parsers for INCOIS `.xls` PFZ advisories, live/cached Ocean State Forecasts (OSF), and boundary CSV manifests.
+- **Test Suite:** **Pytest** (32/32 automated unit tests passing in ~3.5s).
 
 ---
 
@@ -105,7 +122,7 @@ Double-click [`run.bat`](./run.bat) or run it in your terminal:
 
 #### 1️⃣ Clone the Repo
 ```bash
-git clone https://github.com/Legend2006H/ISRO-ORCA-Project.git
+git clone https://github.com/adityashinde0/ISRO-ORCA-Project.git
 cd ISRO-ORCA-Project
 ```
 
@@ -130,16 +147,22 @@ pip install -r requirements.txt
 cp .env.example .env
 ```
 Key configuration variables:
-- `GEMINI_API_KEY`: API key for Google Gemini generative explanation (optional; system falls back cleanly to deterministic GIS agent if not configured).
+- `GEMINI_API_KEY`: API key for Google Gemini generative planning & explanation (optional; system falls back cleanly and instantly to deterministic rule planner if not configured).
 - `CORS_ORIGINS`: Comma-separated list of allowed origins (defaults to `http://127.0.0.1:8000,http://localhost:8000,http://127.0.0.1:3000,http://localhost:3000`).
 - `GEMINI_MODEL`: Specific Gemini model to target (defaults to `gemini-2.0-flash`, `gemini-1.5-flash`).
 
-#### 5️⃣ Run the Server
+#### 5️⃣ Run Automated Tests
+```bash
+pytest
+```
+*(Runs all 32 unit tests verifying multi-agent orchestration, safety gates, PFZ ingestion, A\* routing, and fallback mechanisms in ~3.5s).*
+
+#### 6️⃣ Run the Server
 ```bash
 uvicorn api.main:app --reload
 ```
 
-#### 6️⃣ Open in Browser! 🎉
+#### 7️⃣ Open in Browser! 🎉
 Navigate to **`http://127.0.0.1:8000`** in your browser to see the dashboard.
 
 ---
@@ -162,7 +185,7 @@ The vessel limits configured below serve as **Category B: Prototype Operational 
 
 ORCA maintains explicit data provenance and does not misrepresent data states:
 - **`LIVE` Mode**: Real-time telemetry fetched directly from external marine APIs (Open-Meteo).
-- **`CACHED` Mode**: Offline validated datasets (INCOIS `.xls` PFZ advisories and historical `.nc`/`.json` OSF forecasts) with auditable timestamps.
+- **`CACHED` Mode**: Offline validated datasets (INCOIS `.xls` PFZ advisories and historical `.json` OSF forecasts) with auditable timestamps.
 - **`DEMO` Mode**: Synthetic spatial-temporal physical telemetry simulation used when live network streams are unreachable.
 
 ---
@@ -174,7 +197,7 @@ If you want to test the backend API directly via Swagger UI (`http://127.0.0.1:8
 | Endpoint | Method | What it does |
 | :--- | :---: | :--- |
 | `/health` | `GET` | System health check, source mode (`LIVE`/`CACHED`/`DEMO`), and Gemini configuration status. |
-| `/api/v1/chat` | `POST` | Core decision-support endpoint (query, GPS coordinates, language, vessel profile). |
+| `/api/v1/chat` | `POST` | Core decision-support endpoint (OrcaOrchestrator planning, GIS tools, safety gate, evidence ledger, and multilingual synthesis). |
 | `/api/v1/pfz/all` | `GET` | Candidate Potential Fishing Zones as GeoJSON. |
 | `/api/v1/boundaries/all` | `GET` | Coastal boundaries & CZMP geofences. |
 | `/api/v1/ocean/live` | `GET` | Real-time / fallback sea-state telemetry for coordinates. |
@@ -188,24 +211,38 @@ If you want to test the backend API directly via Swagger UI (`http://127.0.0.1:8
 
 ```text
 ISRO-ORCA-Project/
-├── 🌐 index.html             # The main WebGIS mission-control dashboard
-├── 🎨 styles.css             # Neon/ocean glassmorphism styling
-├── ⚡ app.js                 # Frontend interactions, map plotting & speech
-├── 📄 requirements.txt       # Python dependencies
-├── 📁 api/                   # Backend services
-│   ├── main.py               # FastAPI server & CORS configuration
-│   ├── models.py             # Schemas & prototype vessel profiles
-│   ├── offline_service.py    # Deterministic calculation & fallback engine
-│   ├── gemini_agent.py       # Evidence-grounded Gemini prompt integration
-│   ├── incois_osf.py         # INCOIS Ocean State Forecast adapter
-│   ├── live_marine.py        # Marine weather telemetry fetcher
-│   ├── pfz_import.py         # Excel (.xls) PFZ advisory parser
-│   ├── boundary_import.py    # Restricted zone validator
-│   ├── routing.py            # A* shortest safe path algorithm
-│   └── scoring.py            # Zone safety & yield scoring engine
-└── 📁 data/                  # Sample datasets & manifests
-    ├── manifests/            # Boundary definitions
-    └── raw/                  # PFZ advisories & cached ocean observations
+├── 🌐 index.html                 # The main WebGIS mission-control dashboard
+├── 🎨 styles.css                 # Neon/ocean glassmorphism styling
+├── ⚡ app.js                     # Frontend interactions, map plotting & speech
+├── 📄 requirements.txt           # Python dependencies
+├── 📁 api/                       # Backend services & agentic engine
+│   ├── agents/                   # Multi-Agent Orchestration Layer
+│   │   ├── __init__.py           # Package exports
+│   │   ├── context.py            # Typed OrcaExecutionContext & Pydantic models
+│   │   ├── orchestrator.py       # Bounded task DAG planner & safety gate
+│   │   └── tools.py              # Typed deterministic domain tools registry
+│   ├── main.py                   # FastAPI server & CORS configuration
+│   ├── models.py                 # Schemas & prototype vessel profiles
+│   ├── offline_service.py        # Deterministic calculation & fallback engine
+│   ├── gemini_agent.py           # Structured planning & synthesis prompts
+│   ├── incois_osf.py             # INCOIS Ocean State Forecast adapter
+│   ├── live_marine.py            # Marine weather telemetry fetcher
+│   ├── pfz_import.py             # Excel (.xls) PFZ advisory parser
+│   ├── boundary_import.py        # Restricted zone validator
+│   ├── routing.py                # A* shortest safe path algorithm
+│   └── scoring.py                # Zone safety & yield scoring engine
+├── 📁 docs/                      # Architectural specifications
+│   └── AGENTIC_ARCHITECTURE.md   # Authoritative Multi-Agent architecture doc
+├── 📁 tests/                     # Automated unit test suite (32 tests)
+│   ├── test_agent_orchestration.py # Agent DAG, tool limits, and cyclic checks
+│   ├── test_golden_queries.py    # End-to-end chat queries & instant fallback
+│   ├── test_incois_osf.py        # OSF parser validation
+│   ├── test_pfz_import.py        # INCOIS .xls parser validation
+│   ├── test_boundary_import.py   # Restricted zone parser validation
+│   └── test_offline_service.py   # Deterministic scoring tests
+└── 📁 data/                      # Sample datasets & manifests
+    ├── manifests/                # Boundary definitions
+    └── raw/                      # PFZ advisories & cached ocean observations
 ```
 
 ---
