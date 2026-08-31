@@ -135,3 +135,49 @@ def test_worst_zone_intent() -> None:
     ans = res["answer"].lower()
     assert any(w in ans for w in ("least favorable", "lowest", "worst", "riskiest", "avoid", "risk", "hazard"))
 
+
+def test_missing_api_key_instant_deterministic_fallback(monkeypatch) -> None:
+    for var in ("GEMINI_API_KEY", "GOOGLE_API_KEY", "GOOGLE_GEMINI_API_KEY", "GEMINI_KEY", "API_KEY"):
+        monkeypatch.delenv(var, raising=False)
+    
+    from api.gemini_agent import get_gemini_api_key, generate_marine_synthesis
+    assert get_gemini_api_key() is None
+
+    # generate_marine_synthesis must return None immediately without making network calls
+    synth = generate_marine_synthesis(
+        user_query="safe to sail?",
+        language="en",
+        intent="safety",
+        vessel_profile={"name": "Small Boat"},
+        safety_assessment={"departure_allowed": False},
+        top_candidate={"name": "Zone 1"},
+        alternative_candidates=[],
+        api_key=None,
+    )
+    assert synth is None
+
+    # analyse must succeed cleanly using deterministic engine
+    res = analyse("Is it safe to depart?", DEFAULT_LOCATION, "en", api_key=None)
+    assert res["ai_provider"] == "DETERMINISTIC GIS AGENT"
+    assert "answer" in res
+    assert len(res["answer"]) > 10
+
+
+def test_api_key_env_resolution(monkeypatch) -> None:
+    monkeypatch.setenv("GEMINI_API_KEY", "test-env-key-12345")
+    from api.gemini_agent import get_gemini_api_key
+    assert get_gemini_api_key() == "test-env-key-12345"
+    assert get_gemini_api_key("custom-override-key") == "custom-override-key"
+
+
+def test_vessels_endpoint() -> None:
+    res = client.get("/api/v1/vessels")
+    assert res.status_code == 200
+    data = res.json()
+    assert "small_boat" in data
+    assert "trawler" in data
+    assert "deep_sea" in data
+    assert data["small_boat"]["max_wave_m"] == 1.5
+    assert data["deep_sea"]["max_wave_m"] == 4.0
+
+

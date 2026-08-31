@@ -76,7 +76,7 @@ def fetch_live_marine_conditions(location: Location, timeout_seconds: int = 3) -
         except Exception:
             continue
 
-    # 2. Dynamic Real-Time Spatial-Temporal Ocean Physics (varying by location and time of day)
+    # 2. Dynamic Spatial-Temporal Ocean Physics Simulation (Fallback if live API unreachable)
     # Higher latitudes (Mumbai/Palghar) have different wave/wind profiles than South Konkan (Ratnagiri/Malvan)
     lat_factor = (lat - 15.5) / 5.0  # 0.0 at Goa/Vengurla, 1.0 at Dahanu
     diurnal = math.sin(math.radians((hour - 6) * 15.0))  # peaks in afternoon, lowest at dawn
@@ -88,8 +88,8 @@ def fetch_live_marine_conditions(location: Location, timeout_seconds: int = 3) -
     wave_dir_dynamic = round(250.0 + 25.0 * math.sin(math.radians(lat * 20)), 1)
 
     return {
-        "source_mode": "LIVE",
-        "source_name": "High-Res Marine Telemetry (Live Observation Model)",
+        "source_mode": "DEMO",
+        "source_name": "Spatial-Temporal Ocean Observation Model (Offline Prototype Fallback)",
         "retrieved_at": now.isoformat(),
         "location": {"lat": location.lat, "lon": location.lon},
         "observations": [

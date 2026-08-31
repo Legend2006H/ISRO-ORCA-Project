@@ -13,7 +13,7 @@
 [![Built with Love](https://img.shields.io/badge/Made%20with-❤️%20for%20Indian%20Fishermen-red?style=for-the-badge)](#)
 
 <p align="center">
-  <b>Transforming complex satellite Earth Observation & ocean forecast data into simple, life-saving voice advice for coastal fishermen. 🇮🇳</b>
+  <b>Transforming satellite Earth Observation & ocean forecast data into actionable, evidence-grounded decision-support advisories for coastal fishermen. 🇮🇳</b>
 </p>
 
 [💡 The Problem](#-why-we-built-this-the-problem) •
@@ -30,24 +30,24 @@
 
 ## 💡 Why We Built This (The Problem)
 
-Every single day, Indian space and ocean agencies like **ISRO** and **INCOIS** generate incredible satellite datasets — Sea Surface Temperature (SST), Chlorophyll levels, Potential Fishing Zones (PFZs), wave heights, and weather forecasts.
+Every single day, Indian space and ocean agencies like **ISRO** and **INCOIS** generate authoritative satellite datasets — Sea Surface Temperature (SST), Chlorophyll levels, Potential Fishing Zones (PFZs), wave heights, and weather forecasts.
 
 **The Catch?** 🎣  
 Most artisanal fishermen head out into deep waters in small wooden boats or trawlers without access to easy-to-understand information. Complex `.xls` coordinate sheets or technical meteorological maps are impractical to read on a rocking boat under the sun.
 
 **Our Solution — ORCA:**  
-We created an intelligent, multi-agent assistant that lets a fisherman simply speak or ask a question in **Hindi, Marathi, or English** (e.g. *"Where is the best safe fishing spot today near Mumbai?"*). ORCA handles the heavy math, checks wave hazards, finds the shortest safe route, and explains everything clearly — with **zero AI hallucinations**!
+We created an intelligent decision-support platform that lets a fisherman simply speak or ask a question in **Hindi, Marathi, or English** (e.g. *"Where is the best safe fishing spot today near Mumbai?"*). ORCA handles the spatial calculations, checks wave hazards against configured thresholds, finds the shortest safe route, and explains everything clearly with evidence-grounded AI synthesis!
 
 ---
 
 ## ✨ What ORCA Does
 
 - 🎙️ **Voice & Regional Languages:** Speak naturally in Hindi, Marathi, or English.
-- 🐟 **Smart PFZ Matching:** Automatically reads INCOIS Potential Fishing Zone advisories to find the nearest high-yield spots.
-- 🛡️ **Zero-Hallucination Safety Engine:** The AI **never** guesses wave heights or navigation coordinates. All risk calculations, wave limits, and distance checks are handled by deterministic Python GIS logic.
-- 🧭 **A\* Safe Corridor Routing:** Calculates the safest path for boats while steering clear of restricted marine boundaries and rough waters.
-- 🗺️ **Cyber-Ocean WebGIS Dashboard:** A clean, glassmorphism radar map built with Leaflet so port authorities and fishermen can see everything visually.
-- 🔍 **Inspectable Evidence Ledger:** Every recommendation clearly shows where the data came from (agency, timestamp, live/cached status) so you can trust it.
+- 🐟 **Smart PFZ Matching:** Reads INCOIS Potential Fishing Zone advisories to find candidate high-yield spots.
+- 🛡️ **Deterministic Safety Verification:** All sea-state checks, wave limits, and geodesic calculations are computed by deterministic Python GIS logic. Language models are strictly grounded on verified structured telemetry.
+- 🧭 **A\* Safe Corridor Routing:** Calculates path recommendations for boats while avoiding restricted marine boundaries and hazards.
+- 🗺️ **Cyber-Ocean WebGIS Dashboard:** A responsive, glassmorphism radar map built with Leaflet for visual situational awareness.
+- 🔍 **Inspectable Evidence Ledger:** Every recommendation clearly exposes data provenance (agency source, timestamp, live/cached status, quality level).
 
 ---
 
@@ -129,9 +129,11 @@ pip install -r requirements.txt
 #### 4️⃣ Set Up Environment Variables (Optional)
 ```bash
 cp .env.example .env
-# You can add your GEMINI_API_KEY in .env if you want dynamic Gemini AI responses!
-# (If no key is added, ORCA automatically uses its smart offline rule-engine fallback)
 ```
+Key configuration variables:
+- `GEMINI_API_KEY`: API key for Google Gemini generative explanation (optional; system falls back cleanly to deterministic GIS agent if not configured).
+- `CORS_ORIGINS`: Comma-separated list of allowed origins (defaults to `http://127.0.0.1:8000,http://localhost:8000,http://127.0.0.1:3000,http://localhost:3000`).
+- `GEMINI_MODEL`: Specific Gemini model to target (defaults to `gemini-2.0-flash`, `gemini-1.5-flash`).
 
 #### 5️⃣ Run the Server
 ```bash
@@ -139,19 +141,30 @@ uvicorn api.main:app --reload
 ```
 
 #### 6️⃣ Open in Browser! 🎉
-Navigate to **`http://127.0.0.1:8000`** in your browser to see the live dashboard!
+Navigate to **`http://127.0.0.1:8000`** in your browser to see the dashboard.
 
 ---
 
-## 🚢 Vessel Safety Limits
+## 🚢 Prototype Vessel Safety Limits
 
-Different boats have different limits. ORCA changes its warning levels based on what you are sailing:
+The vessel limits configured below serve as **Category B: Prototype Operational Assumptions** for decision-support demonstration:
 
-| Boat Type | Max Wave Height 🌊 | Max Wind Speed 💨 | Safe Range 📍 | Notes |
+| Boat Type | Max Wave Height 🌊 | Max Wind Speed 💨 | Safe Range 📍 | Operational Assumption |
 | :--- | :---: | :---: | :---: | :--- |
-| 🛶 **Small Boat** | `1.5 m` | `10 m/s` (~19 kts) | `80 km` | Artisanal canoes & small motorboats. High sensitivity to rough seas. |
-| 🚤 **Trawler** | `2.5 m` | `15 m/s` (~29 kts) | `150 km` | Standard mechanized coastal fishing boats. |
-| 🚢 **Deep Sea Vessel** | `4.0 m` | `20 m/s` (~38 kts) | `300 km` | Large commercial vessels built for extreme offshore trips. |
+| 🛶 **Small Boat** | `1.5 m` | `10 m/s` (~19 kts) | `80 km` | Artisanal canoes & small outboard motorboats. |
+| 🚤 **Trawler** | `2.5 m` | `15 m/s` (~29 kts) | `180 km` | Motorized mechanized coastal trawlers. |
+| 🚢 **Deep Sea Vessel** | `4.0 m` | `22 m/s` (~43 kts) | `450 km` | Commercial offshore fishing vessels. |
+
+> ℹ️ **Maritime Safety Note:** For real-world commercial or artisanal deployment, these operational parameters must be calibrated against authoritative maritime guidance (e.g., Directorate General of Shipping, IMO standards, INCOIS warnings) and vessel-specific survey certifications.
+
+---
+
+## 🛰️ Live vs. Cached Data Transparency
+
+ORCA maintains explicit data provenance and does not misrepresent data states:
+- **`LIVE` Mode**: Real-time telemetry fetched directly from external marine APIs (Open-Meteo).
+- **`CACHED` Mode**: Offline validated datasets (INCOIS `.xls` PFZ advisories and historical `.nc`/`.json` OSF forecasts) with auditable timestamps.
+- **`DEMO` Mode**: Synthetic spatial-temporal physical telemetry simulation used when live network streams are unreachable.
 
 ---
 
@@ -161,13 +174,14 @@ If you want to test the backend API directly via Swagger UI (`http://127.0.0.1:8
 
 | Endpoint | Method | What it does |
 | :--- | :---: | :--- |
-| `/health` | `GET` | Quick system health check and active data mode (`LIVE` vs `CACHED`). |
-| `/api/v1/chat` | `POST` | The core intelligence endpoint! Takes query, GPS coords, language, and boat type. |
-| `/api/v1/pfz/all` | `GET` | Gets all parsed Potential Fishing Zones as GeoJSON for maps. |
-| `/api/v1/boundaries/all` | `GET` | Gets restricted coastal boundaries & CZMP buffer zones. |
-| `/api/v1/ocean/live` | `GET` | Fetches live / cached wave height and ocean conditions. |
-| `/api/v1/route` | `POST` | Calculates an A\* safe navigation route avoiding hazards. |
-| `/api/v1/vessels` | `GET` | Lists all supported vessel profiles and threshold configurations. |
+| `/health` | `GET` | System health check, source mode (`LIVE`/`CACHED`/`DEMO`), and Gemini configuration status. |
+| `/api/v1/chat` | `POST` | Core decision-support endpoint (query, GPS coordinates, language, vessel profile). |
+| `/api/v1/pfz/all` | `GET` | Candidate Potential Fishing Zones as GeoJSON. |
+| `/api/v1/boundaries/all` | `GET` | Coastal boundaries & CZMP geofences. |
+| `/api/v1/ocean/live` | `GET` | Real-time / fallback sea-state telemetry for coordinates. |
+| `/api/v1/route` | `POST` | Calculates an A\* safe corridor route avoiding geofenced hazards. |
+| `/api/v1/vessels` | `GET` | Lists configured vessel profiles and prototype thresholds. |
+| `/api/v1/evidence/{id}` | `GET` | Fetches specific evidence record by ID. |
 
 ---
 
@@ -179,27 +193,29 @@ ISRO-ORCA-Project/
 ├── 🎨 styles.css             # Neon/ocean glassmorphism styling
 ├── ⚡ app.js                 # Frontend interactions, map plotting & speech
 ├── 📄 requirements.txt       # Python dependencies
-├── 📁 api/                   # All backend code lives here
-│   ├── main.py               # FastAPI server entry point
-│   ├── models.py             # Data models & vessel limit schemas
+├── 📁 api/                   # Backend services
+│   ├── main.py               # FastAPI server & CORS configuration
+│   ├── models.py             # Schemas & prototype vessel profiles
 │   ├── offline_service.py    # Deterministic calculation & fallback engine
-│   ├── gemini_agent.py       # Gemini AI prompt orchestration
+│   ├── gemini_agent.py       # Evidence-grounded Gemini prompt integration
 │   ├── incois_osf.py         # INCOIS Ocean State Forecast adapter
-│   ├── live_marine.py        # Weather condition fetcher
-│   ├── pfz_import.py         # Excel (.xls) advisory parser
+│   ├── live_marine.py        # Marine weather telemetry fetcher
+│   ├── pfz_import.py         # Excel (.xls) PFZ advisory parser
 │   ├── boundary_import.py    # Restricted zone validator
 │   ├── routing.py            # A* shortest safe path algorithm
-│   └── scoring.py            # Zone safety & potential scoring engine
+│   └── scoring.py            # Zone safety & yield scoring engine
 └── 📁 data/                  # Sample datasets & manifests
-    ├── manifests/            # Official boundary definitions
+    ├── manifests/            # Boundary definitions
     └── raw/                  # PFZ advisories & cached ocean observations
 ```
 
 ---
 
-## ⚠️ Important Note & Disclaimer
+## ⚠️ Important Note & Disclaimers
 
-> 🚨 **Safety First:** This software is built as a hackathon prototype for decision support. In demonstration/cached mode, data is simulated or cached from historical records. Fishermen should always check official VHF radio broadcasts, IMD alerts, and local port warnings before heading to sea!
+> 🚨 **Decision-Support Disclaimer:** This software is built as a hackathon prototype for operational decision support. In demonstration/cached mode, data is simulated or cached from historical records. Coastal operators must always verify official VHF radio broadcasts, IMD meteorological alerts, and local port authority warnings before heading to sea!
+
+> 🔒 **Security Notice:** Any development credentials or API keys previously exposed in git history must be rotated and revoked externally on the provider console. Real credentials should only be provided via local `.env` or deployment environment variables.
 
 ---
 
@@ -207,7 +223,7 @@ ISRO-ORCA-Project/
 
 - 🏆 **Hackathon:** Smart India Hackathon (SIH 2026)
 - 🚀 **Problem Statement:** SIH26176 (ISRO / INCOIS)
-- 💙 **Special Thanks:** To **ISRO** and **INCOIS** for open oceanographic & Earth Observation data initiatives that inspire young engineers to build impactful solutions for our coastal communities.
+- 💙 **Special Thanks:** To **ISRO** and **INCOIS** for open oceanographic & Earth Observation data initiatives.
 
 ---
 
