@@ -17,9 +17,12 @@
 
 [💡 The Problem](#-why-we-built-this-the-problem) •
 [✨ What ORCA Does](#-what-orca-does) •
-[🛠️ Tech Stack](#-tech-stack-we-used) •
-[🚀 How to Run It](#-how-to-run-it-locally) •
-[🚢 Vessel Safety Limits](#-vessel-safety-limits) •
+[📞 Voice Helpline (No Internet)](#-cellular-voice-helpline-no-internet-required) •
+[🏗️ Architecture](#️-how-it-works-multi-agent-architecture) •
+[🛠️ Tech Stack](#️-tech-stack-we-used) •
+[🚀 Local Setup](#-how-to-run-it-locally) •
+[☁️ Cloud Deployment (Render)](#️-production-deployment-on-render--environment-variables) •
+[🚢 Safety Limits](#-prototype-vessel-safety-limits) •
 [📡 API Endpoints](#-api-endpoints) •
 [👥 Team & Credits](#-team--acknowledgements)
 
@@ -35,18 +38,33 @@ Every single day, Indian space and ocean agencies like **ISRO** and **INCOIS** g
 Most artisanal fishermen head out into deep waters in small wooden boats or trawlers without access to easy-to-understand information. Complex `.xls` coordinate sheets or technical meteorological maps are impractical to read on a rocking boat under the sun.
 
 **Our Solution — ORCA:**  
-We created an intelligent decision-support platform that lets a fisherman simply speak or ask a question in **Hindi, Marathi, or English** (e.g. *"Where is the best safe fishing spot today near Mumbai?"*). ORCA handles the spatial calculations, checks wave hazards against configured thresholds, finds the shortest safe route, and explains everything clearly with evidence-grounded AI synthesis!
+We created an intelligent dual-channel decision-support platform:
+1. **WebGIS Radar Dashboard:** For smartphones & laptops with internet access.
+2. **Cellular IVR Voice Helpline:** For basic 2G/keypad phones with **zero mobile internet required**!
 
 ---
 
 ## ✨ What ORCA Does
 
-- 🎙️ **Voice & Regional Languages:** Speak naturally in Hindi, Marathi, or English.
+- 🎙️ **Voice & Regional Languages:** Speak or listen naturally in Hindi, Marathi, or English.
+- 📞 **Zero-Internet Cellular Helpline:** Dial from any basic keypad mobile phone to receive spoken advisories over phone calls via Exotel IVR.
 - 🐟 **Smart PFZ Matching:** Reads INCOIS Potential Fishing Zone advisories to find candidate high-yield spots.
 - 🛡️ **Deterministic Safety Verification:** All sea-state checks, wave limits, and geodesic calculations are computed by deterministic Python GIS logic. Language models are strictly grounded on verified structured telemetry.
 - 🧭 **A\* Safe Corridor Routing:** Calculates path recommendations for boats while avoiding restricted marine boundaries and hazards.
 - 🗺️ **Cyber-Ocean WebGIS Dashboard:** A responsive, glassmorphism radar map built with Leaflet for visual situational awareness.
 - 🔍 **Inspectable Evidence Ledger:** Every recommendation clearly exposes data provenance (agency source, timestamp, live/cached status, quality level).
+
+---
+
+## 📞 Cellular Voice Helpline (No Internet Required)
+
+For artisanal fishermen without smartphones or mobile data packages:
+1. **Dial the ORCA Helpline Number** from any standard mobile phone.
+2. **Keypad DTMF Selection:**
+   - **Language:** `1` = Marathi (`मराठी`), `2` = Hindi (`हिंदी`), `3` = English
+   - **Service:** `1` = Marine Safety, `2` = Nearest PFZ, `3` = Safe Route
+   - **Port:** `1` = Mumbai, `2` = Ratnagiri, `3` = Malvan, `4` = Alibaug, `5` = Dahanu
+3. **Spoken Voice Advisory:** The caller immediately hears live sea-state observations, wave heights, and vessel-specific departure clearance.
 
 ---
 
@@ -56,40 +74,44 @@ ORCA implements a **Bounded Multi-Agent Orchestrator over Typed Deterministic Do
 
 ```mermaid
 flowchart TD
-    A[👤 Fisherman asks in Hindi / Marathi / English] --> B[🎙️ WebGIS Dashboard]
-    B --> C[⚡ FastAPI /api/v1/chat]
-    C --> D[🧭 OrcaOrchestrator]
+    subgraph Channels ["Access Channels"]
+        A[👤 Fisherman with Web Browser] --> B[🎙️ WebGIS Dashboard]
+        B --> C[⚡ FastAPI /api/v1/chat]
+        
+        D[📞 Fisherman on Basic Phone] --> E[🏢 Exotel Telecom IVR]
+        E --> F[⚡ FastAPI /api/v1/voice/*]
+    end
+
+    C & F --> G[🧭 OrcaOrchestrator]
     
     subgraph Planning ["🧠 Intent & Task Planning"]
-        D --> E{Gemini Key Active?}
-        E -->|Yes| F[🤖 Gemini Neural Planner: JSON DAG]
-        E -->|No / Offline| G[📋 Deterministic Rule-Based Fallback DAG]
-        F --> H[🛡️ Pydantic Plan & Cycle Validation]
-        G --> H
+        G --> H{Gemini Key Active?}
+        H -->|Yes| I[🤖 Gemini Neural Planner: JSON DAG]
+        H -->|No / Offline| J[📋 Deterministic Rule-Based Fallback DAG]
+        I --> K[🛡️ Pydantic Plan & Cycle Validation]
+        J --> K
     end
 
     subgraph DeterministicTools ["🧮 Typed Deterministic Domain Tools"]
-        H --> I[📍 tool_resolve_coastal_entity]
-        H --> J[🌊 tool_fetch_ocean_telemetry]
-        H --> K[🚤 tool_evaluate_vessel_risk]
-        H --> L[🐟 tool_lookup_pfz_advisory]
-        H --> M[📊 tool_rank_fishing_zones]
-        H --> N[🧭 tool_calculate_safe_route]
+        K --> L[📍 tool_resolve_coastal_entity]
+        K --> M[🌊 tool_fetch_ocean_telemetry]
+        K --> N[🚤 tool_evaluate_vessel_risk]
+        K --> O[🐟 tool_lookup_pfz_advisory]
+        K --> P[📊 tool_rank_fishing_zones]
+        K --> Q[🧭 tool_calculate_safe_route]
     end
 
     subgraph SafetyAndEvidence ["🛡️ Safety Gate & Evidence Ledger"]
-        I & J & K & L & M & N --> O[🔒 Hard Deterministic Safety Gate]
-        O --> P[📋 Typed Evidence Ledger]
+        L & M & N & O & P & Q --> R[🔒 Hard Deterministic Safety Gate]
+        R --> S[📋 Typed Evidence Ledger]
     end
     
-    subgraph SynthesisLayer ["🗣️ Multilingual Synthesis"]
-        P --> Q[✨ Google Gemini Synthesis Agent]
-        Q -->|Failover| R[📝 Deterministic Multi-Language Templates]
+    subgraph OutputLayer ["🗣️ Multilingual Output"]
+        S --> T[✨ Google Gemini Synthesis Agent]
+        T -->|Web Output| B
+        S --> U[🗣️ VoiceResponseFormatter & ExoML]
+        U -->|Spoken Audio| E
     end
-    
-    Q --> S[💬 Conversational Guidance + Nav Corridor]
-    R --> S
-    S --> B
 ```
 
 ---
@@ -98,10 +120,11 @@ flowchart TD
 
 - **Frontend:** HTML5, Modern CSS (Glassmorphism "Cyber-Ocean" theme), Vanilla JS, **Leaflet.js** (WebGIS radar map).
 - **Backend:** **Python 3.10+**, **FastAPI**, Uvicorn, Pydantic v2.
+- **Telephony & IVR:** **Exotel Programmable Voice API** (ExoML XML, DTMF keypress parsing, in-memory TTL sessions).
 - **Agentic AI & Speech:** Google Gemini API (Structured task planning & multilingual conversational synthesis) + Web Speech API.
 - **GIS & Pathfinding:** Custom **A\* Grid Pathfinding** routing with Chaikin corner smoothing, Haversine geodesic calculations, CZMP boundary geofencing.
 - **Data Ingestion:** Parsers for INCOIS `.xls` PFZ advisories, live/cached Ocean State Forecasts (OSF), and boundary CSV manifests.
-- **Test Suite:** **Pytest** (32/32 automated unit tests passing in ~3.5s).
+- **Test Suite:** **Pytest** (50/50 automated unit tests passing in ~6.0s).
 
 ---
 
@@ -150,12 +173,16 @@ Key configuration variables:
 - `GEMINI_API_KEY`: API key for Google Gemini generative planning & explanation (optional; system falls back cleanly and instantly to deterministic rule planner if not configured).
 - `CORS_ORIGINS`: Comma-separated list of allowed origins (defaults to `http://127.0.0.1:8000,http://localhost:8000,http://127.0.0.1:3000,http://localhost:3000`).
 - `GEMINI_MODEL`: Specific Gemini model to target (defaults to `gemini-2.0-flash`, `gemini-1.5-flash`).
+- `EXOTEL_ACCOUNT_SID`: (Optional) Exotel Account SID for live cellular helpline integration.
+- `EXOTEL_API_KEY`: (Optional) Exotel API Key.
+- `EXOTEL_API_TOKEN`: (Optional) Exotel API Token.
+- `EXOTEL_PHONE_NUMBER`: (Optional) Exotel Virtual Phone Number.
 
 #### 5️⃣ Run Automated Tests
 ```bash
 pytest
 ```
-*(Runs all 32 unit tests verifying multi-agent orchestration, safety gates, PFZ ingestion, A\* routing, and fallback mechanisms in ~3.5s).*
+*(Runs all 50 unit tests verifying multi-agent orchestration, safety gates, PFZ ingestion, A\* routing, and Exotel voice IVR in ~6.0s).*
 
 #### 6️⃣ Run the Server
 ```bash
@@ -164,6 +191,26 @@ uvicorn api.main:app --reload
 
 #### 7️⃣ Open in Browser! 🎉
 Navigate to **`http://127.0.0.1:8000`** in your browser to see the dashboard.
+
+---
+
+## ☁️ Production Deployment on Render & Environment Variables
+
+When deploying ORCA to **Render**, configure the following environment variables in the Render Dashboard (**Environment** tab):
+
+| Variable Name | Purpose | Example Value | Required? |
+| :--- | :--- | :--- | :---: |
+| `GEMINI_API_KEY` | Google Gemini AI Key for task planning & conversational synthesis. | `AIzaSy...` | Optional (falls back to deterministic engine) |
+| `CORS_ORIGINS` | Allowed origins for web API requests. | `https://orca-marine.onrender.com,http://localhost:8000` | Recommended |
+| `EXOTEL_ACCOUNT_SID` | Exotel Account SID for cellular helpline webhook authentication. | `your_account_sid` | Optional (for real Exotel calls) |
+| `EXOTEL_API_KEY` | Exotel API Key. | `your_api_key` | Optional |
+| `EXOTEL_API_TOKEN` | Exotel API Token. | `your_api_token` | Optional |
+| `EXOTEL_PHONE_NUMBER` | Virtual number assigned to your Exotel IVR applet. | `08047101234` | Optional |
+| `ORCA_ENV` | Runtime environment identifier. | `production` | Recommended |
+
+### Render Build & Start Commands:
+- **Build Command:** `pip install -r requirements.txt`
+- **Start Command:** `uvicorn api.main:app --host 0.0.0.0 --port $PORT`
 
 ---
 
@@ -198,6 +245,11 @@ If you want to test the backend API directly via Swagger UI (`http://127.0.0.1:8
 | :--- | :---: | :--- |
 | `/health` | `GET` | System health check, source mode (`LIVE`/`CACHED`/`DEMO`), and Gemini configuration status. |
 | `/api/v1/chat` | `POST` | Core decision-support endpoint (OrcaOrchestrator planning, GIS tools, safety gate, evidence ledger, and multilingual synthesis). |
+| `/api/v1/voice/incoming` | `POST/GET` | Exotel IVR entrypoint when a phone call is connected (returns ExoML `<Gather>` language prompt). |
+| `/api/v1/voice/input` | `POST/GET` | Exotel DTMF webhook handling keypad selections (language, intent, port) and generating spoken advisories. |
+| `/api/v1/voice/status` | `POST/GET` | Exotel call completion/disconnect callback. |
+| `/api/v1/voice/telemetry` | `GET` | Anonymized voice session metrics and recent call logs. |
+| `/api/v1/voice/simulate` | `POST` | Interactive JSON helper to test/simulate the voice state machine locally without carrier fees. |
 | `/api/v1/pfz/all` | `GET` | Candidate Potential Fishing Zones as GeoJSON. |
 | `/api/v1/boundaries/all` | `GET` | Coastal boundaries & CZMP geofences. |
 | `/api/v1/ocean/live` | `GET` | Real-time / fallback sea-state telemetry for coordinates. |
@@ -221,6 +273,12 @@ ISRO-ORCA-Project/
 │   │   ├── context.py            # Typed OrcaExecutionContext & Pydantic models
 │   │   ├── orchestrator.py       # Bounded task DAG planner & safety gate
 │   │   └── tools.py              # Typed deterministic domain tools registry
+│   ├── voice/                    # Cellular Voice Access Layer (Exotel IVR / DTMF)
+│   │   ├── __init__.py           # Package exports
+│   │   ├── session.py            # Thread-safe in-memory session store & phone masking
+│   │   ├── formatter.py          # Multilingual spoken voice response generator
+│   │   ├── exotel.py             # ExoML XML builder & DTMF state controller
+│   │   └── routes.py             # Voice webhooks & simulation endpoints
 │   ├── main.py                   # FastAPI server & CORS configuration
 │   ├── models.py                 # Schemas & prototype vessel profiles
 │   ├── offline_service.py        # Deterministic calculation & fallback engine
@@ -231,9 +289,11 @@ ISRO-ORCA-Project/
 │   ├── boundary_import.py        # Restricted zone validator
 │   ├── routing.py                # A* shortest safe path algorithm
 │   └── scoring.py                # Zone safety & yield scoring engine
-├── 📁 docs/                      # Architectural specifications
-│   └── AGENTIC_ARCHITECTURE.md   # Authoritative Multi-Agent architecture doc
-├── 📁 tests/                     # Automated unit test suite (32 tests)
+├── 📁 docs/                      # Architectural specifications & guides
+│   ├── AGENTIC_ARCHITECTURE.md   # Authoritative Multi-Agent architecture doc
+│   └── VOICE_ACCESS.md           # Exotel IVR setup, DTMF maps & demo scripts
+├── 📁 tests/                     # Automated unit test suite (50 tests)
+│   ├── test_voice_access.py      # Voice IVR, DTMF state, safety gate & privacy tests
 │   ├── test_agent_orchestration.py # Agent DAG, tool limits, and cyclic checks
 │   ├── test_golden_queries.py    # End-to-end chat queries & instant fallback
 │   ├── test_incois_osf.py        # OSF parser validation
@@ -251,7 +311,7 @@ ISRO-ORCA-Project/
 
 > 🚨 **Decision-Support Disclaimer:** This software is built as a hackathon prototype for operational decision support. In demonstration/cached mode, data is simulated or cached from historical records. Coastal operators must always verify official VHF radio broadcasts, IMD meteorological alerts, and local port authority warnings before heading to sea!
 
-> 🔒 **Security Notice:** Any development credentials or API keys previously exposed in git history must be rotated and revoked externally on the provider console. Real credentials should only be provided via local `.env` or deployment environment variables.
+> 🔒 **Security Notice:** Any development credentials or API keys must be injected securely via local `.env` or deployment environment variables (e.g. Render Dashboard). Never commit live API keys to git!
 
 ---
 
