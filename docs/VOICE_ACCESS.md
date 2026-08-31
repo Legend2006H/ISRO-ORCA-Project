@@ -119,82 +119,63 @@ The voice channel dynamically prepends honest attribution tags:
 
 ---
 
-## ⚙️ Environment Variables
+## 💰 Telephony Provider Cost & Trial Reality
 
-Add to your local `.env`:
-```env
-# Telephony / IVR Integration (Exotel)
-EXOTEL_API_KEY=your_exotel_api_key_here
-EXOTEL_API_TOKEN=your_exotel_api_token_here
-EXOTEL_ACCOUNT_SID=your_exotel_account_sid_here
-EXOTEL_PHONE_NUMBER=your_exotel_virtual_number_here
-```
-
----
-
-## 🧪 Local Simulation vs. Live Exotel Integration
-
-| Feature | Local Simulation Mode | Live Exotel Integration |
+| Aspect | Exotel Reality | Hackathon Impact / Mitigation |
 | :--- | :--- | :--- |
-| **Trigger** | `POST /api/v1/voice/simulate` or curl | Real telephone cellular call to virtual number |
-| **Phone Internet** | Not applicable (JSON/HTTP client) | **Zero internet required on mobile phone** |
-| **Backend Internet** | Uses live Open-Meteo or fallback | Uses live Open-Meteo or fallback |
-| **ExoML XML** | Returned in JSON response for inspection | Streamed directly to Exotel voice synthesizer |
-| **Cost** | 100% Free / Local | Standard Exotel trial/production rates |
+| **Trial Availability** | 15-day free trial on signup with trial credits (~₹1,000 credit). | Sufficient for hackathon demonstration. |
+| **Virtual Number** | Trial accounts provide a single virtual landline (e.g. 080-XXXXXXXX). | Inbound calls to this virtual number connect to ORCA webhooks. |
+| **KYC / Verification** | Requires business email & caller ID verification. | If verification is delayed, use the **Local Simulation Harness** or **Twilio Voice**. |
+| **Paid Production** | Commercial plans start at ~₹19,999/yr + call charges (~₹1.20/min). | For hackathon judging, the developer trial account or simulation harness is recommended. |
+| **Recommended Alternative** | **Twilio Programmable Voice** ($15.50 instant credit, instant virtual number, TwiML `<Response><Gather><Say>` 100% compatible). | Zero business verification delay; instant live telephone line. |
 
-### Step-by-Step Local CLI Testing:
-```bash
-# 1. Start Call (Step 0: Greeting)
-curl -X POST http://127.0.0.1:8000/api/v1/voice/simulate \
-  -H "Content-Type: application/json" \
-  -d '{"call_id": "test-101"}'
+---
 
-# 2. Select Marathi (Step 1: Intent Menu)
-curl -X POST http://127.0.0.1:8000/api/v1/voice/simulate \
-  -H "Content-Type: application/json" \
-  -d '{"call_id": "test-101", "digits": "1"}'
+## 🚀 LIVE HACKATHON DEMO GUIDE
 
-# 3. Select Marine Safety (Step 2: Location Menu)
-curl -X POST http://127.0.0.1:8000/api/v1/voice/simulate \
-  -H "Content-Type: application/json" \
-  -d '{"call_id": "test-101", "digits": "1"}'
+### 1. Provider Account & Number Requirements
+- **Option A (Exotel):** Exotel trial account with assigned Virtual Number.
+- **Option B (Twilio):** Twilio trial account with assigned Phone Number.
+- **Option C (Local Simulation Harness):** Zero-carrier simulation using `POST /api/v1/voice/simulate`.
 
-# 4. Select Ratnagiri (Step 3: Advisory Execution)
-curl -X POST http://127.0.0.1:8000/api/v1/voice/simulate \
-  -H "Content-Type: application/json" \
-  -d '{"call_id": "test-101", "digits": "2"}'
+### 2. Backend Deployment Requirements
+1. Deploy ORCA backend to a public HTTPS URL (e.g., Render, Railway, AWS, or local tunnel `ngrok http 8000`).
+2. Verify public health check: `curl https://<your-domain>/health`.
+
+### 3. Environment Variables Configuration
+```env
+# Exotel / Telephony Configuration
+EXOTEL_API_KEY=your_exotel_api_key
+EXOTEL_API_TOKEN=your_exotel_api_token
+EXOTEL_ACCOUNT_SID=your_exotel_account_sid
+EXOTEL_PHONE_NUMBER=your_exotel_virtual_number
 ```
 
----
+### 4. Public Webhook Configuration in Exotel Dashboard
+1. Log into **Exotel Dashboard** $\to$ **Applets** $\to$ **Create Custom Applet**.
+2. Select **Passthru / Voice URL**.
+3. Set Webhook URL to: `https://<your-domain>/api/v1/voice/incoming` (HTTP Method: `POST`).
+4. Bind this Applet to your Exotel Virtual Number.
 
-## 🛡️ Security & Privacy Considerations
-1. **Zero Credential Exposure:** Internal API keys and server stack traces are never exposed over voice or HTTP headers.
-2. **Caller Privacy:** Caller phone numbers are masked in logs and session storage (`+91******3210`).
-3. **Strict DTMF Allowlist:** Callers can only trigger validated options (`1`–`5`, `9`, `0`); arbitrary parameter injection is impossible.
-4. **Session TTL Isolation:** Voice sessions automatically expire after 300 seconds (5 minutes) to prevent memory leaks and stale state reuse.
-5. **Idempotency Protection:** Repeated callbacks with identical inputs re-serve the current state safely without duplicate computation.
-
----
-
-## 🚀 Steps to Connect a Live Exotel Number (Production Setup)
-1. **Obtain Exotel Account & Virtual Number:** Sign up at [exotel.com](https://exotel.com/) and acquire a virtual Landline/Mobile number.
-2. **Deploy ORCA Backend:** Deploy ORCA to a public HTTPS domain (e.g. Render, Railway, AWS EC2) with valid SSL.
-3. **Configure Exotel Applet:**
-   - In the Exotel Dashboard, create a **Passthru Applet** or **Custom Flow**.
-   - Set the URL to: `https://<your-domain>/api/v1/voice/incoming`.
-   - Set the HTTP method to `POST`.
-4. **Bind Applet to Number:** Assign the created applet to your Exotel virtual number.
-5. **Dial and Verify:** Call the Exotel virtual number from any standard mobile phone to hear the live ORCA multi-language voice advisory.
+### 5. Step-by-Step Test Call Sequence
+1. Dial the Exotel Virtual Number from a normal phone.
+2. **Step 0 (Language):** Press `1` for Marathi (`मराठी`).
+3. **Step 1 (Intent):** Press `1` for Marine Weather & Safety (`सागरी हवामान व सुरक्षा`).
+4. **Step 2 (Port):** Press `2` for Ratnagiri (`रत्नागिरी`).
+5. **Step 3 (Advisory):** Hear live spoken advisory:
+   > *"थेट उपग्रह व सागरी माहितीनुसार: रत्नागिरी परिसर: गंभीर इशारा. समुद्रात जाऊ नका! लाटांची उंची २.२ मीटर आहे, जी १.५ मीटरच्या सुरक्षित मर्यादेपेक्षा जास्त आहे. मुख्य मेनूसाठी ९ दाबा. कॉल समाप्त करण्यासाठी ० दाबा."*
 
 ---
 
 ## 🎤 60–90 Second Hackathon Judging Demonstration Script
 
-1. **Step 1:** Open the ORCA WebGIS Dashboard on screen to demonstrate the live interactive radar map and telemetry for Ratnagiri.
-2. **Step 2:** Hold up a basic mobile phone (or toggle Airplane Mode on with Wi-Fi off to show zero data connectivity).
-3. **Step 3:** Dial the ORCA Exotel helpline number on speakerphone.
-4. **Step 4:** Listen to the initial multilingual prompt, then press `1` on the keypad for Marathi.
-5. **Step 5:** Press `1` for Marine Weather & Safety, then press `2` for Ratnagiri.
-6. **Step 6:** Hear the real-time spoken advisory matching the dashboard's live wave and safety verdict.
-7. **Step 7 (Pitch):**  
-   *"Notice that the phone has no mobile internet. It only needs basic cellular calling. The call reaches our ORCA backend through Exotel, where the exact same multi-agent safety gate and deterministic oceanographic calculations generate the live advisory."*
+1. **Show WebGIS Dashboard:** Open ORCA on a laptop/projector showing live sea-state and radar for Ratnagiri.
+2. **Show Basic Phone:** Hold up a basic mobile phone with **mobile data and Wi-Fi disabled** (or a simple feature phone).
+3. **Dial Helpline:** Dial the ORCA helpline number on speakerphone.
+4. **Interactive Keypad Navigation:**
+   - Press `1` (Marathi)
+   - Press `1` (Safety)
+   - Press `2` (Ratnagiri)
+5. **Audible Verification:** The audience hears the real-time spoken advisory matching the dashboard's live wave height (e.g., 2.2m) and blocked safety verdict.
+6. **Closing Pitch:**  
+   *"Notice that the phone has no mobile internet. It only needs basic cellular voice calling. The call reaches our ORCA backend through Exotel, where the exact same multi-agent safety gate and deterministic oceanographic calculations generate the live advisory."*

@@ -11,13 +11,19 @@ from .session import voice_session_store
 voice_router = APIRouter(prefix="/api/v1/voice", tags=["Voice Access"])
 
 
+import uuid
+
+
 def _extract_param(
     form_val: str | None,
     query_val: str | None,
     default: str = "",
 ) -> str:
     """Safely extract parameter from either form-data (POST) or query string (GET)."""
-    return (form_val or query_val or default).strip()
+    val = (form_val or query_val or "").strip()
+    if val:
+        return val
+    return default or f"call-{uuid.uuid4().hex[:8]}"
 
 
 @voice_router.api_route("/incoming", methods=["GET", "POST"])

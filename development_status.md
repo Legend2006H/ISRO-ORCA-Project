@@ -62,7 +62,7 @@ This document outlines the current state of the ORCA Marine Intelligence Project
 - **Multilingual DTMF Flow**: Supports Marathi (`1`), Hindi (`2`), and English (`3`) language selection, intent selection (Safety, Nearest PFZ, Safe Route), and coastal port resolution (Mumbai, Ratnagiri, Malvan, Alibaug, Dahanu).
 - **Deterministic Voice Safety Gate**: Concise spoken advisories (`VoiceResponseFormatter`) strictly grounded in the evidence ledger with zero numerical hallucination.
 - **Comprehensive Test Suite**: **50/50 automated unit tests passing** (100% pass rate in ~7.1s across core, multi-agent orchestrator, and voice layers).
-- **Phase 6.1 Production Hardening**: Live Open-Meteo telemetry reuse (`use_live_data=True`), caller phone masking (`+91******3210`), XML sanitization, idempotency protection, and honest provenance tags (`LIVE`, `CACHED`, `DEMO`) for voice.
+- **Phase 6.1 & 6.2 Live Telephony Verification**: Auto-generating unique call session IDs (`uuid4`), live Open-Meteo telemetry reuse (`use_live_data=True`), caller phone masking (`+91******3210`), XML sanitization, idempotency protection, honest provenance tags (`LIVE`, `CACHED`, `DEMO`), provider trial/cost documentation, and end-to-end judge demonstration guide.
 
 ## How to Run Locally
 
