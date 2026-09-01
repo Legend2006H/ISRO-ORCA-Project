@@ -24,7 +24,16 @@ if not errorlevel 1 (
     )
 )
 
-REM 2. Check or create virtual environment
+REM 2. Prefer an existing working Python installation
+set "VENV_PYTHON=%PYTHON_CMD%"
+%VENV_PYTHON% -c "import fastapi, uvicorn, pandas, pydantic, xlrd, httpx" >nul 2>nul
+if not errorlevel 1 (
+    echo [OK] Using the existing Python environment.
+    echo.
+    goto :runtime_ready
+)
+
+REM 3. Check or create virtual environment
 if not exist "venv\Scripts\activate.bat" (
     echo [INFO] Virtual environment not found. Creating venv...
     %PYTHON_CMD% -m venv venv
@@ -37,33 +46,69 @@ if not exist "venv\Scripts\activate.bat" (
     echo.
 )
 
-REM 3. Activate virtual environment
-call venv\Scripts\activate.bat
+REM 4. Use the virtual environment explicitly
+set "VENV_PYTHON=%~dp0venv\Scripts\python.exe"
+if not exist "%VENV_PYTHON%" (
+    echo [ERROR] Virtual environment was not created correctly.
+    pause
+    exit /b 1
+)
 
-REM 4. Check if required packages are installed
-%PYTHON_CMD% -c "import fastapi, uvicorn, pandas, pydantic, xlrd, httpx, multipart" >nul 2>nul
-if %errorlevel% neq 0 (
+:runtime_ready
+
+REM 5. Check if required packages are installed
+"%VENV_PYTHON%" -c "import fastapi, uvicorn, pandas, pydantic, xlrd, httpx" >nul 2>nul
+if errorlevel 1 goto :install_dependencies
+"%VENV_PYTHON%" -m pip check >nul 2>nul
+if errorlevel 1 goto :install_dependencies
+echo [OK] All required dependencies are installed.
+echo.
+goto :dependencies_ready
+
+:install_dependencies
     echo [INFO] Required dependencies not detected. Installing requirements...
-    pip install -r requirements.txt
-    if %errorlevel% neq 0 (
+    "%VENV_PYTHON%" -m pip install -r requirements.txt
+    if errorlevel 1 (
         echo [ERROR] Package installation failed. Please check network/pip setup.
         pause
         exit /b 1
     )
     echo [SUCCESS] Dependencies installed successfully.
     echo.
-) else (
-    echo [OK] All required dependencies are installed.
-    echo.
+
+:dependencies_ready
+
+REM 6. Reuse an already-running healthy server
+powershell -NoProfile -ExecutionPolicy Bypass -Command "try { Invoke-WebRequest -UseBasicParsing -TimeoutSec 1 http://127.0.0.1:8000/health | Out-Null; exit 0 } catch { exit 1 }"
+if not errorlevel 1 (
+    echo [OK] ORCA is already running. Opening the dashboard...
+    start "" "http://127.0.0.1:8000/"
+    exit /b 0
 )
 
-REM 5. Launch Dashboard in Default Browser
+REM 7. Start FastAPI application, then wait until it is ready
 echo [INFO] Starting ORCA Marine Intelligence Platform...
-echo [INFO] Opening dashboard at http://127.0.0.1:8000/
-echo.
+start "ORCA Server" "%VENV_PYTHON%" -m uvicorn api.main:app --host 127.0.0.1 --port 8000
+
+set "SERVER_READY=0"
+for /L %%I in (1,1,30) do (
+    powershell -NoProfile -ExecutionPolicy Bypass -Command "try { Invoke-WebRequest -UseBasicParsing -TimeoutSec 1 http://127.0.0.1:8000/health | Out-Null; exit 0 } catch { exit 1 }"
+    if not errorlevel 1 (
+        set "SERVER_READY=1"
+        goto :server_ready
+    )
+    timeout /t 1 /nobreak >nul
+)
+
+if "%SERVER_READY%" neq "1" (
+    echo [ERROR] ORCA did not become ready at http://127.0.0.1:8000/
+    echo Check the ORCA Server window for details.
+    pause
+    exit /b 1
+)
+
+:server_ready
+echo [OK] Server is ready. Opening dashboard in your browser...
 start "" "http://127.0.0.1:8000/"
 
-REM 6. Run FastAPI application via uvicorn
-python -m uvicorn api.main:app --host 127.0.0.1 --port 8000 --reload
-
-pause
+exit /b 0
